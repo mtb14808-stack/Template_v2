@@ -1,0 +1,11 @@
+{
+  "luau-lsp.completion.imports.enabled": false,
+  "luau-lsp.completion.suggestImports": false,
+  "editor.suggest.showWords": false,
+  "editor.showUnused": false,
+  "luau-lsp.fflags.enableNewSolver": false,
+  "luau-lsp.completion.addParentheses": true,
+  "luau-lsp.completion.fillCallArguments": true,
+  "robloxlsp.completion.callParentheses": "Always"
+}
+

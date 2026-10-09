@@ -1,0 +1,105 @@
+--!strict
+local Workspace = game:GetService("Workspace")
+
+local Visualize = {}
+
+local DEFAULT_DURATION = 1.5
+local DEBUG_FOLDER_NAME = "RayCastDebug"
+
+local function GetDebugFolder(): Folder
+	local folder = Workspace:FindFirstChild(DEBUG_FOLDER_NAME) :: Folder?
+	if not folder then
+		folder = Instance.new("Folder")
+		folder.Name = DEBUG_FOLDER_NAME
+		folder.Parent = Workspace
+	end
+	return folder
+end
+
+local function MakeDebugPart(name: string): Part
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanTouch = false
+	p.CanQuery = false
+	p.Material = Enum.Material.Neon
+	return p
+end
+
+function Visualize.VisualizeNormalCast(Origin: Vector3, Direction: Vector3, Result: RaycastResult?)
+	local length = Direction.Magnitude
+	if length <= 0.001 then return end
+
+	local debugFolder = GetDebugFolder()
+	local endPos = if Result then Result.Position else (Origin + Direction)
+	local actualDist = (endPos - Origin).Magnitude
+
+	local p = MakeDebugPart("DebugRay")
+	p.Size = Vector3.new(0.06, 0.06, actualDist)
+	p.CFrame = CFrame.lookAt(Origin, endPos) * CFrame.new(0, 0, -actualDist / 2)
+	p.Color = if Result then Color3.fromRGB(0, 255, 0) else Color3.fromRGB(255, 0, 0)
+	p.Parent = debugFolder
+
+	task.delay(DEFAULT_DURATION, function() p:Destroy() end)
+end
+
+function Visualize.VisualizeShapeCast(CF: CFrame, Size: Vector3, Direction: Vector3, Result: RaycastResult?)
+	local distance = Direction.Magnitude
+	if distance <= 0.001 then return end
+
+	local debugFolder = GetDebugFolder()
+	local actualDist = if Result then (Result.Position - CF.Position).Magnitude else distance
+
+	local p = MakeDebugPart("DebugBoxCast")
+	p.Size = Vector3.new(Size.X, Size.Y, actualDist)
+	p.CFrame = CFrame.lookAt(CF.Position, CF.Position + Direction) * CFrame.new(0, 0, -actualDist / 2)
+	p.Color = if Result then Color3.fromRGB(0, 255, 0) else Color3.fromRGB(0, 170, 255)
+	p.Transparency = 0.6
+	p.Parent = debugFolder
+
+	task.delay(DEFAULT_DURATION, function() p:Destroy() end)
+end
+
+function Visualize.VisualizeSphereCast(Origin: Vector3, Direction: Vector3, Radius: number, Result: RaycastResult?)
+	local debugFolder = GetDebugFolder()
+	local endPos = if Result then Result.Position else (Origin + Direction)
+	local actualDir = endPos - Origin
+	local length = actualDir.Magnitude
+
+	if length <= 0.001 then return end
+
+	local color = if Result then Color3.fromRGB(0, 255, 0) else Color3.fromRGB(0, 140, 255)
+
+	local startBall = MakeDebugPart("DebugSphereStart")
+	startBall.Shape = Enum.PartType.Ball
+	startBall.Size = Vector3.one * (Radius * 2)
+	startBall.Position = Origin
+	startBall.Transparency = 0.6
+	startBall.Color = color
+	startBall.Parent = debugFolder
+
+	local cylinder = MakeDebugPart("DebugSphereCylinder")
+	cylinder.Shape = Enum.PartType.Cylinder
+	cylinder.Size = Vector3.new(length, Radius * 2, Radius * 2)
+	cylinder.CFrame = CFrame.lookAt(Origin + actualDir / 2, endPos) * CFrame.Angles(0, math.rad(90), 0)
+	cylinder.Color = color
+	cylinder.Transparency = 0.75
+	cylinder.Parent = debugFolder
+
+	local endBall = MakeDebugPart("DebugSphereEnd")
+	endBall.Shape = Enum.PartType.Ball
+	endBall.Size = Vector3.one * (Radius * 2)
+	endBall.Position = endPos
+	endBall.Transparency = 0.6
+	endBall.Color = color
+	endBall.Parent = debugFolder
+
+	task.delay(DEFAULT_DURATION, function()
+		startBall:Destroy()
+		cylinder:Destroy()
+		endBall:Destroy()
+	end)
+end
+
+return Visualize

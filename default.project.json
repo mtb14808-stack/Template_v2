@@ -1,0 +1,45 @@
+{
+  "name": "Template",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "SourceCode": {
+        "$path": "src/SourceCode"
+      },
+      "Packages": {
+        "$path": "Packages"
+      }
+    },
+    "ServerScriptService": {
+      "SourceCode": {
+        "$className": "Folder",
+        "Server": {
+          "$path": "src/Server"
+        },
+        "ServerUtilities": {
+          "$path": "ServerUtilities"
+        }
+      },
+      "PlayerData": {
+        "$path": "PlayerData"
+      },
+      "ServerPackages": {
+        "$path": "ServerPackages"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/StarterPlayerScripts"
+        }
+      }
+    },
+    "Workspace": {
+      "RayCastDebug": {
+        "$className": "Folder"
+      }
+    },
+    "Lighting": {},
+    "SoundService": {}
+  }
+}

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guida ServerReplication &amp; Networker</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --accent: #6366f1;
+    --accent-dark: #4338ca;
+    --border: #e2e8f0;
+    --code-bg: #1e1e2e;
+    --code-text: #e2e8f0;
+    --keyword: #c792ea;
+    --string: #c3e88d;
+    --comment: #7c8fa6;
+    --func: #82aaff;
+    --green: #10b981;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px 20px;
+    background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 300px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    color: #1e1b4b;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+  }
+
+  .section {
+    margin-top: 70px;
+    padding-top: 10px;
+  }
+
+  .section:first-of-type {
+    margin-top: 30px;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+    color: white;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    margin: 0 0 20px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+  }
+
+  h3 {
+    font-size: 1.05rem;
+    color: var(--accent-dark);
+    margin: 28px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h3::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .filename {
+    display: inline-block;
+    background: var(--code-bg);
+    color: #a5f3fc;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-left: 4px;
+  }
+
+  p {
+    margin: 10px 0;
+  }
+
+  .intro-box {
+    background: #eef2ff;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 18px 0 28px;
+    color: #312e81;
+    font-size: 0.95rem;
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 18px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    margin: 12px 0 24px;
+  }
+
+  code.inline {
+    background: #eef2ff;
+    color: var(--accent-dark);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .kw { color: var(--keyword); }
+  .str { color: var(--string); }
+  .cmt { color: var(--comment); font-style: italic; }
+  .fn { color: var(--func); }
+
+  .explain-list {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 14px 0 30px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .explain-item {
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .explain-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .explain-item .head {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-weight: 700;
+    color: var(--accent-dark);
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    word-break: break-word;
+  }
+
+  .explain-item .row {
+    margin: 4px 0;
+    font-size: 0.9rem;
+  }
+
+  .explain-item .label {
+    font-weight: 700;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+
+  .summary-box {
+    background: #ecfdf5;
+    border-left: 4px solid var(--green);
+    padding: 18px 22px;
+    border-radius: 8px;
+    margin: 20px 0 10px;
+  }
+
+  .summary-box .row {
+    margin: 8px 0;
+    font-size: 0.93rem;
+  }
+
+  .summary-box code.inline {
+    background: #d1fae5;
+    color: #065f46;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 2px dashed var(--border);
+    margin: 60px 0;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  .credit {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: -10px;
+    margin-bottom: 20px;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 60px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Guida a ServerReplication &amp; Networker</h1>
+  <div class="subtitle">Sincronizzazione dati Server ↔ Client in Roblox Luau</div>
+
+  <!-- ===================== SEZIONE 1: BROADCAST GLOBALE ===================== -->
+  <div class="section">
+    <h2><span class="badge">1</span> Replica Globale (a tutti i giocatori)</h2>
+
+    <h3>SERVER <span class="filename">BuildServer.luau</span></h3>
+    <pre><span class="kw">--!strict</span>
+<span class="kw">local</span> ReplicatedStorage = game:GetService(<span class="str">"ReplicatedStorage"</span>)
+<span class="kw">local</span> ServerReplication = require(ReplicatedStorage.Packages.ServerReplication)
+
+<span class="cmt">-- 1. Crea il Token univoco per identificare questo tipo di replica</span>
+<span class="kw">local</span> Token = ServerReplication.Server.Token(<span class="str">"GameEvent"</span>)
+
+<span class="kw">local</span> BuildServer = {}
+
+<span class="kw">function</span> BuildServer:Init()
+	<span class="cmt">-- 2. Crea la nuova Replica con i suoi dati iniziali</span>
+	<span class="kw">local</span> replica = ServerReplication.Server.New({
+		Token = Token,
+		Tags = {},
+		Data = {
+			Duration = 5,
+			Name = <span class="str">"RADIOACTIVE"</span>,
+		},
+	})
+
+	task.wait(3)
+	
+	<span class="cmt">-- 3. Invia e rende visibile la replica a TUTTI i client</span>
+	replica:Replicate()
+
+	<span class="cmt">-- 4. Aspetta la durata dell'evento e poi distrugge la replica</span>
+	task.delay(replica.Data.Duration, <span class="kw">function</span>()
+		warn(<span class="str">"ENDED EVENT"</span>)
+		replica:Destroy()
+	<span class="kw">end</span>)
+<span class="kw">end</span>
+
+<span class="kw">return</span> BuildServer</pre>
+
+    <h3>CLIENT <span class="filename">BuildClient.luau</span></h3>
+    <pre><span class="kw">--!strict</span>
+<span class="kw">local</span> ReplicatedStorage = game:GetService(<span class="str">"ReplicatedStorage"</span>)
+<span class="kw">local</span> ServerReplication = require(ReplicatedStorage.Packages.ServerReplication)
+
+<span class="kw">local</span> BuildClient = {}
+
+<span class="kw">function</span> BuildClient:Init()
+	<span class="cmt">-- 1. Ascolta l'arrivo di qualsiasi replica con Token "GameEvent"</span>
+	ServerReplication.Client.OnNew(<span class="str">"GameEvent"</span>, <span class="kw">function</span>(Replica)
+		warn(<span class="str">"CONNECTED"</span>)
+
+		<span class="cmt">-- 2. Legge i dati sincronizzati dal Server</span>
+		<span class="kw">local</span> EventName = Replica.Data.Name
+		<span class="kw">local</span> Duration = Replica.Data.Duration
+		warn(<span class="str">"STARTED EVENT: "</span> .. EventName .. <span class="str">" DURATION: "</span> .. Duration)
+
+		<span class="cmt">-- 3. Registra cosa fare quando il Server distruggerà la replica</span>
+		Replica.Maid:Add(<span class="kw">function</span>()
+			warn(<span class="str">"ENDED"</span>)
+		<span class="kw">end</span>)
+	<span class="kw">end</span>)
+
+	<span class="cmt">-- 4. FONDAMENTALE: Richiede al server di inviare le repliche attive</span>
+	ServerReplication.Client.RequestData()
+<span class="kw">end</span>
+
+<span class="kw">return</span> BuildClient</pre>
+
+    <h3>Spiegazione riga per riga — Lato Server</h3>
+    <div class="explain-list">
+      <div class="explain-item">
+        <div class="head">ServerReplication.Server.Token("GameEvent")</div>
+        <div class="row"><span class="label">Cosa fa:</span> Crea un "timbro" o canale univoco.</div>
+        <div class="row"><span class="label">Perché esiste:</span> Assicura che nessun altro script sul server possa accidentalmente creare una replica con lo stesso identico nome duplicato mandando in confusione il client.</div>
+      </div>
+      <div class="explain-item">
+        <div class="head">ServerReplication.Server.New({ Token, Tags, Data })</div>
+        <div class="row"><span class="label">Cosa fa:</span> Alloca e costruisce l'oggetto Replica nella memoria del server.</div>
+        <div class="row"><span class="label">Token:</span> Dice a quale canale registrato appartiene questa replica.</div>
+        <div class="row"><span class="label">Tags = {}:</span> Una tabella immutabile per identificatori (es. se fosse di un giocatore ci metteresti <code class="inline">{ UserId = player.UserId }</code>). Essendo un evento globale per tutti, la lasciamo vuota.</div>
+        <div class="row"><span class="label">Data = {...}:</span> È la tabella vera e propria contenente i dati che verranno duplicati e inviati ai client.</div>
+      </div>
+      <div class="explain-item">
+        <div class="head">replica:Replicate()</div>
+        <div class="row"><span class="label">Cosa fa:</span> Dice a Replica: "Questa replica è pubblica, mandala a tutti!".</div>
+        <div class="row"><span class="label">Dietro le quinte:</span> Prende i dati e li invia tramite RemoteEvent a tutti i client attualmente connessi che hanno finito di caricare. Inoltre la salva in una lista interna: se un giocatore entra 1 minuto dopo, il server gli spedirà in automatico questa replica senza che tu debba fare niente.</div>
+      </div>
+      <div class="explain-item">
+        <div class="head">replica:Destroy()</div>
+        <div class="row"><span class="label">Cosa fa:</span> Termina il ciclo vitale della replica.</div>
+        <div class="row"><span class="label">Dietro le quinte:</span> Cancella la tabella dal server, rimuove la replica dalla memoria e invia un segnale di rimozione a tutti i client. Sul client, questa chiamata scatena in automatico il Maid.</div>
+      </div>
+    </div>
+
+    <h3>Spiegazione riga per riga — Lato Client</h3>
+    <div class="explain-list">
+      <div class="explain-item">
+        <div class="head">ServerReplication.Client.OnNew("GameEvent", function(Replica) ... end)</div>
+        <div class="row"><span class="label">Cosa fa:</span> È il punto di ascolto. Dice al client: "Appena ricevi dal server una replica che ha Token 'GameEvent', esegui questa funzione".</div>
+        <div class="row"><span class="label">Come lavora:</span> Ti passa come argomento l'oggetto Replica popolato con i Data e i Tags inviati dal server. Si attiva sia per gli eventi che partono mentre stai giocando, sia per quelli già attivi quando sei appena entrato.</div>
+      </div>
+      <div class="explain-item">
+        <div class="head">Replica.Data.Name / Replica.Data.Duration</div>
+        <div class="row"><span class="label">Cosa fa:</span> Legge i valori dalla tabella replicata. Sul client questa tabella è considerata in sola lettura (non puoi fare <code class="inline">Replica.Data.Name = "Altro"</code> sul client, solo il server può modificarla con <code class="inline">:Set()</code>).</div>
+      </div>
+      <div class="explain-item">
+        <div class="head">Replica.Maid:Add(function() ... end)</div>
+        <div class="row"><span class="label">Cosa fa:</span> È il sistema di pulizia automatica (garbage collection).</div>
+        <div class="row"><span class="label">Come lavora:</span> Qualsiasi funzione o istanza che inserisci dentro <code class="inline">Maid:Add()</code> verrà eseguita o distrutta all'istante esatto in cui il server chiama <code class="inline">replica:Destroy()</code>. È perfetto per togliere la UI a schermo o fermare effetti visivi quando l'evento finisce.</div>
+      </div>
+      <div class="explain-item">
+        <div class="head">ServerReplication.Client.RequestData()</div>
+        <div class="row"><span class="label">Cosa fa:</span> È l'interruttore che avvia la comunicazione.</div>
+        <div class="row"><span class="label">Perché è obbligatoria:</span> All'avvio del gioco, il client aspetta di aver caricato la mappa e gli script. Con questa riga manda un segnale al server dicendo: "Server, io sono pronto, registrami e mandami tutte le repliche che hai!". Senza questa chiamata, il server ti ignora e OnNew non scatterà mai.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ===================== SEZIONE 2: REPLICA PRIVATA ===================== -->
+  <div class="section">
+    <h2><span class="badge">2</span> Replica Privata (a un singolo giocatore)</h2>
+
+    <div class="intro-box">
+      Per mandare una replica solo al singolo giocatore (dati privati come monete, gemme, inventario), la differenza chiave è una sola: invece di <code class="inline">replica:Replicate()</code>, usi <code class="inline">replica:Subscribe(player)</code>. Ecco l'esempio più corto possibile.
+    </div>
+
+    <h3>SERVER <span class="filename">PlayerDataServer.luau</span></h3>
+    <pre><span class="kw">--!strict</span>
+<span class="kw">local</span> Players = game:GetService(<span class="str">"Players"</span>)
+<span class="kw">local</span> ReplicatedStorage = game:GetService(<span class="str">"ReplicatedStorage"</span>)
+<span class="kw">local</span> ServerReplication = require(ReplicatedStorage.Packages.ServerReplication)
+
+<span class="kw">local</span> Token = ServerReplication.Server.Token(<span class="str">"PlayerData"</span>)
+
+Players.PlayerAdded:Connect(<span class="kw">function</span>(player)
+	<span class="cmt">-- 1. Crea la replica taggata con l'UserId del player</span>
+	<span class="kw">local</span> replica = ServerReplication.Server.New({
+		Token = Token,
+		Tags = { UserId = player.UserId },
+		Data = {
+			Coins = 100,
+			Gems = 10,
+		},
+	})
+
+	<span class="cmt">-- 2. Appena il client di questo player è pronto, gliela inviamo SOLO a lui con :Subscribe()</span>
+	<span class="kw">local</span> conn: any
+	conn = ServerReplication.Server.NewReadyPlayer:Connect(<span class="kw">function</span>(readyPlayer)
+		<span class="kw">if</span> readyPlayer == player <span class="kw">then</span>
+			conn:Disconnect()
+			replica:Subscribe(player) <span class="cmt">-- 👈 Invia SOLO a questo player!</span>
+		<span class="kw">end</span>
+	<span class="kw">end</span>)
+
+	<span class="cmt">-- 3. Quando il player esce, distrugge la replica</span>
+	Players.PlayerRemoving:Connect(<span class="kw">function</span>(leavingPlayer)
+		<span class="kw">if</span> leavingPlayer == player <span class="kw">then</span>
+			replica:Destroy()
+		<span class="kw">end</span>
+	<span class="kw">end</span>)
+<span class="kw">end</span>)</pre>
+
+    <h3>CLIENT <span class="filename">PlayerDataClient.luau</span></h3>
+    <pre><span class="kw">--!strict</span>
+<span class="kw">local</span> Players = game:GetService(<span class="str">"Players"</span>)
+<span class="kw">local</span> ReplicatedStorage = game:GetService(<span class="str">"ReplicatedStorage"</span>)
+<span class="kw">local</span> ServerReplication = require(ReplicatedStorage.Packages.ServerReplication)
+
+<span class="kw">local</span> LocalPlayer = Players.LocalPlayer
+
+<span class="cmt">-- Ascolta l'arrivo dei tuoi dati</span>
+ServerReplication.Client.OnNew(<span class="str">"PlayerData"</span>, <span class="kw">function</span>(replica)
+	<span class="cmt">-- Controlla che sia la tua replica</span>
+	<span class="kw">if</span> replica.Tags.UserId ~= LocalPlayer.UserId <span class="kw">then</span> <span class="kw">return</span> <span class="kw">end</span>
+
+	warn(<span class="str">"✅ DATI RICEVUTI! Coins:"</span>, replica.Data.Coins, <span class="str">"| Gems:"</span>, replica.Data.Gems)
+
+	<span class="cmt">-- Ascolta se il server ti aggiunge o toglie monete</span>
+	replica:OnSet({<span class="str">"Coins"</span>}, <span class="kw">function</span>(newCoins: number)
+		warn(<span class="str">"💰 Coins aggiornati a:"</span>, newCoins)
+	<span class="kw">end</span>)
+<span class="kw">end</span>)
+
+<span class="cmt">-- Avvisa il server che sei pronto</span>
+ServerReplication.Client.RequestData()</pre>
+
+    <div class="summary-box">
+      <strong>La differenza in sintesi:</strong>
+      <div class="row">➔ <code class="inline">replica:Replicate()</code> — La vedono tutti i player nel server (es. eventi globali, blocchi della mappa, round).</div>
+      <div class="row">➔ <code class="inline">replica:Subscribe(player)</code> — La vede esclusivamente quel giocatore (es. monete, livello, impostazioni private). Gli altri player non sapranno nemmeno che esiste.</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ===================== SEZIONE 3: NETWORKER ===================== -->
+  <div class="section">
+    <h2><span class="badge">3</span> Networker (di Leif Stout)</h2>
+
+    <div class="intro-box">
+      Networker serve a scambiare dati tra Server e Client senza creare RemoteEvent a mano: colleghi direttamente le funzioni del tuo Service.
+    </div>
+
+    <h3>SERVER <span class="filename">MyService.luau</span></h3>
+    <p class="credit">Espone le funzioni che il client può chiamare.</p>
+    <pre><span class="kw">--!strict</span>
+<span class="kw">local</span> ReplicatedStorage = game:GetService(<span class="str">"ReplicatedStorage"</span>)
+<span class="kw">local</span> Networker = require(ReplicatedStorage.Packages.networker)
+
+<span class="kw">local</span> MyService = {}
+
+<span class="kw">function</span> MyService:Init()
+	<span class="cmt">-- Inizializza il networker per questo service</span>
+	self.networker = Networker.server.new(<span class="str">"MyService"</span>, self, {
+		self.GiveCoins, <span class="cmt">-- Funzioni autorizzate che il client può chiamare</span>
+	})
+<span class="kw">end</span>
+
+<span class="kw">function</span> MyService:GiveCoins(player: Player, amount: number)
+	print(player.Name, <span class="str">"ha chiesto"</span>, amount, <span class="str">"monete"</span>)
+	<span class="kw">return</span> <span class="kw">true</span> <span class="cmt">-- Può anche restituire un valore al client!</span>
+<span class="kw">end</span>
+
+<span class="cmt">-- Se il server vuole mandare qualcosa al client:</span>
+<span class="kw">function</span> MyService:NotifyPlayer(player: Player, msg: string)
+	self.networker:fire(player, <span class="str">"ShowNotice"</span>, msg)
+	<span class="cmt">-- self.networker:fireAll("ShowNotice", msg) -- Per tutti</span>
+<span class="kw">end</span>
+
+<span class="kw">return</span> MyService</pre>
+
+    <h3>CLIENT <span class="filename">MyClient.luau</span></h3>
+    <p class="credit">Si aggancia allo stesso nome ("MyService") e chiama le funzioni del server.</p>
+    <pre><span class="kw">--!strict</span>
+<span class="kw">local</span> ReplicatedStorage = game:GetService(<span class="str">"ReplicatedStorage"</span>)
+<span class="kw">local</span> Networker = require(ReplicatedStorage.Packages.networker)
+
+<span class="kw">local</span> MyClient = {}
+
+<span class="kw">function</span> MyClient:Init()
+	<span class="kw">local</span> networker = Networker.client.new(<span class="str">"MyService"</span>, self)
+
+	<span class="cmt">-- 1. Invia dati al server (stile RemoteEvent)</span>
+	networker:fire(<span class="str">"GiveCoins"</span>, 50)
+
+	<span class="cmt">-- 2. Invia e aspetta la risposta dal server (stile RemoteFunction)</span>
+	task.spawn(<span class="kw">function</span>()
+		<span class="kw">local</span> success = networker:fetch(<span class="str">"GiveCoins"</span>, 100)
+		print(<span class="str">"Risposta dal server:"</span>, success)
+	<span class="kw">end</span>)
+<span class="kw">end</span>
+
+<span class="cmt">-- Funzione chiamata dal server se fa self.networker:fire(player, "ShowNotice", msg)</span>
+<span class="kw">function</span> MyClient:ShowNotice(msg: string)
+	print(<span class="str">"Messaggio dal server:"</span>, msg)
+<span class="kw">end</span>
+
+<span class="kw">return</span> MyClient</pre>
+
+    <div class="summary-box">
+      <strong>In sintesi:</strong>
+      <div class="row">➔ <code class="inline">:fire("NomeFunzione", ...)</code> — Spara l'evento e non aspetta risposta (come FireServer / FireClient).</div>
+      <div class="row">➔ <code class="inline">:fetch("NomeFunzione", ...)</code> — Chiama la funzione sul server e aspetta il valore di ritorno (come InvokeServer).</div>
+    </div>
+  </div>
+
+  <footer>Guida di riferimento — ServerReplication &amp; Networker (Roblox Luau)</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guida Funzioni Sift (Array / Dictionary)</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --accent: #6366f1;
+    --accent-dark: #4338ca;
+    --border: #e2e8f0;
+    --code-bg: #f1f5f9;
+    --arrow: #10b981;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px 20px;
+    background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 300px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    color: #1e1b4b;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-size: 0.95rem;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+    color: var(--accent-dark);
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h2::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .table-wrapper {
+    background: var(--panel);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(30,27,75,0.06);
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+
+  thead th {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    text-align: left;
+    padding: 14px 16px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-top: 1px solid var(--border);
+    transition: background 0.15s ease;
+  }
+
+  tbody tr:hover {
+    background: #f8fafc;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #fafbff;
+  }
+
+  tbody tr:nth-child(even):hover {
+    background: #f1f3fe;
+  }
+
+  td {
+    padding: 14px 16px;
+    vertical-align: top;
+  }
+
+  td.func-name {
+    font-weight: 600;
+    color: var(--accent-dark);
+    white-space: nowrap;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.9rem;
+  }
+
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.85rem;
+    color: #0f172a;
+  }
+
+  .example {
+    display: block;
+  }
+
+  .example .code-line {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .result-arrow {
+    color: var(--arrow);
+    font-weight: 700;
+  }
+
+  .result {
+    color: #059669;
+    font-weight: 600;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 40px;
+  }
+
+  @media (max-width: 700px) {
+    table, thead, tbody, th, td, tr {
+      display: block;
+    }
+    thead {
+      display: none;
+    }
+    tbody tr {
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 0;
+    }
+    td {
+      padding: 8px 16px;
+      border: none;
+    }
+    td::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 3px;
+      font-weight: 700;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Guida Funzioni Sift</h1>
+  <div class="subtitle">Riferimento rapido per le funzioni di <strong>Array</strong> e <strong>Dictionary</strong></div>
+ 
+  <h2>1. Funzioni con Callback (function(...))</h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Funzione</th>
+          <th>Cosa fa la callback</th>
+          <th>Restituisce</th>
+          <th>Esempio pratico</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.filter</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> per tenere l'elemento</td>
+          <td data-label="Restituisce">Nuovo array filtrato</td>
+          <td data-label="Esempio"><span class="example"><code>Array.filter({5, 12, 20}, function(v) return v >= 10 end)</code></span><span class="result-arrow">👉</span> <span class="result">{12, 20}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.filter</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> per tenere la coppia (v, k)</td>
+          <td data-label="Restituisce">Nuovo dizionario filtrato</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.filter({A=10, B=2}, function(v) return v > 5 end)</code></span><span class="result-arrow">👉</span> <span class="result">{A = 10}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.map</td>
+          <td data-label="Cosa fa la callback">Ritorna il valore trasformato</td>
+          <td data-label="Restituisce">Nuovo array modificato</td>
+          <td data-label="Esempio"><span class="example"><code>Array.map({1, 2, 3}, function(v) return v * 10 end)</code></span><span class="result-arrow">👉</span> <span class="result">{10, 20, 30}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.map</td>
+          <td data-label="Cosa fa la callback">Ritorna il valore modificato</td>
+          <td data-label="Restituisce">Nuovo dizionario modificato</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.map({X=5}, function(v) return v + 1 end)</code></span><span class="result-arrow">👉</span> <span class="result">{X = 6}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.sort</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>a > b</code> (decresc.) o <code>a < b</code> (cresc.)</td>
+          <td data-label="Restituisce">Nuovo array ordinato</td>
+          <td data-label="Esempio"><span class="example"><code>Array.sort({3, 1, 4}, function(a, b) return a > b end)</code></span><span class="result-arrow">👉</span> <span class="result">{4, 3, 1}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.some</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> se almeno uno matcha</td>
+          <td data-label="Restituisce">boolean (true/false)</td>
+          <td data-label="Esempio"><span class="example"><code>Array.some({2, 5, 8}, function(v) return v > 6 end)</code></span><span class="result-arrow">👉</span> <span class="result">true</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.some</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> se almeno una coppia matcha</td>
+          <td data-label="Restituisce">boolean (true/false)</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.some({A=1, B=9}, function(v) return v >= 5 end)</code></span><span class="result-arrow">👉</span> <span class="result">true</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.every</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> solo se tutti matchano</td>
+          <td data-label="Restituisce">boolean (true/false)</td>
+          <td data-label="Esempio"><span class="example"><code>Array.every({10, 20, 5}, function(v) return v >= 10 end)</code></span><span class="result-arrow">👉</span> <span class="result">false</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.every</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> solo se tutti matchano</td>
+          <td data-label="Restituisce">boolean (true/false)</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.every({A=10, B=20}, function(v) return v >= 10 end)</code></span><span class="result-arrow">👉</span> <span class="result">true</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.count</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> per conteggiare l'elemento</td>
+          <td data-label="Restituisce">number (totale match)</td>
+          <td data-label="Esempio"><span class="example"><code>Array.count({1, 5, 8, 9}, function(v) return v > 4 end)</code></span><span class="result-arrow">👉</span> <span class="result">3</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.count</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> per conteggiare la coppia</td>
+          <td data-label="Restituisce">number (totale match)</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.count({A=1, B=5}, function(v) return v > 2 end)</code></span><span class="result-arrow">👉</span> <span class="result">1</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.find</td>
+          <td data-label="Cosa fa la callback">Ritorna <code>true</code> quando trova l'elemento</td>
+          <td data-label="Restituisce">Elemento trovato + indice</td>
+          <td data-label="Esempio"><span class="example"><code>Array.find({10, 25, 30}, function(v) return v > 20 end)</code></span><span class="result-arrow">👉</span> <span class="result">25, 2</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.update</td>
+          <td data-label="Cosa fa la callback">Prende il vecchio valore e ritorna il nuovo</td>
+          <td data-label="Restituisce">Nuovo dizionario aggiornato</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.update({Kills=2}, "Kills", function(old) return old + 1 end)</code></span><span class="result-arrow">👉</span> <span class="result">{Kills = 3}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.reduce</td>
+          <td data-label="Cosa fa la callback">Aggrega i valori (acc, value)</td>
+          <td data-label="Restituisce">Valore finale aggregato</td>
+          <td data-label="Esempio"><span class="example"><code>Array.reduce({10, 20, 30}, function(acc, v) return acc + v end, 0)</code></span><span class="result-arrow">👉</span> <span class="result">60</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. Funzioni Normali più Utilizzate (senza callback)</h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Funzione</th>
+          <th>Cosa fa</th>
+          <th>Restituisce</th>
+          <th>Esempio pratico</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.merge</td>
+          <td data-label="Cosa fa">Unisce due o più dizionari (l'ultimo sovrascrive)</td>
+          <td data-label="Restituisce">Nuovo dizionario fuso</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.merge({A = 1}, {B = 2, A = 99})</code></span><span class="result-arrow">👉</span> <span class="result">{A = 99, B = 2}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.mergeDeep</td>
+          <td data-label="Cosa fa">Unisce dizionari anche nelle sotto-tabelle</td>
+          <td data-label="Restituisce">Nuovo dizionario profondo</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.mergeDeep({Cfg={A=1}}, {Cfg={B=2}})</code></span><span class="result-arrow">👉</span> <span class="result">{Cfg = {A=1, B=2}}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.set</td>
+          <td data-label="Cosa fa">Assegna o cambia una singola chiave</td>
+          <td data-label="Restituisce">Nuovo dizionario</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.set({Coins = 10}, "Coins", 50)</code></span><span class="result-arrow">👉</span> <span class="result">{Coins = 50}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.removeKey</td>
+          <td data-label="Cosa fa">Rimuove una chiave specifica</td>
+          <td data-label="Restituisce">Nuovo dizionario</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.removeKey({Coins = 10, Temp = 1}, "Temp")</code></span><span class="result-arrow">👉</span> <span class="result">{Coins = 10}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Sift.None</td>
+          <td data-label="Cosa fa">Valore speciale per cancellare chiavi con merge</td>
+          <td data-label="Restituisce">Segnale di cancellazione</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.merge({Coins=10, Exp=5}, {Exp = Sift.None})</code></span><span class="result-arrow">👉</span> <span class="result">{Coins = 10}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.keys</td>
+          <td data-label="Cosa fa">Estrae tutte le chiavi in un array</td>
+          <td data-label="Restituisce">Array di stringhe/chiavi</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.keys({Coins = 10, Level = 1})</code></span><span class="result-arrow">👉</span> <span class="result">{"Coins", "Level"}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.values</td>
+          <td data-label="Cosa fa">Estrae tutti i valori in un array</td>
+          <td data-label="Restituisce">Array di valori</td>
+          <td data-label="Esempio"><span class="example"><code>Dictionary.values({Coins = 10, Level = 1})</code></span><span class="result-arrow">👉</span> <span class="result">{10, 1}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Dictionary.copyDeep</td>
+          <td data-label="Cosa fa">Clona ricorsivamente la tabella staccando ogni puntatore</td>
+          <td data-label="Restituisce">Tabella identica e isolata</td>
+          <td data-label="Esempio"><span class="example"><code>local safeCopy = Dictionary.copyDeep(originalTable)</code></span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.push</td>
+          <td data-label="Cosa fa">Inserisce elementi alla fine dell'array</td>
+          <td data-label="Restituisce">Nuovo array esteso</td>
+          <td data-label="Esempio"><span class="example"><code>Array.push({"Wood", "Stone"}, "Iron")</code></span><span class="result-arrow">👉</span> <span class="result">{"Wood", "Stone", "Iron"}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.concat</td>
+          <td data-label="Cosa fa">Unisce due o più array in fila</td>
+          <td data-label="Restituisce">Nuovo array combinato</td>
+          <td data-label="Esempio"><span class="example"><code>Array.concat({1, 2}, {3, 4})</code></span><span class="result-arrow">👉</span> <span class="result">{1, 2, 3, 4}</span></td>
+        </tr>
+        <tr>
+          <td class="func-name" data-label="Funzione">Array.slice</td>
+          <td data-label="Cosa fa">Estrae una porzione dell'array (start, end)</td>
+          <td data-label="Restituisce">Sotto-array estratto</td>
+          <td data-label="Esempio"><span class="example"><code>Array.slice({"A", "B", "C", "D"}, 2, 3)</code></span><span class="result-arrow">👉</span> <span class="result">{"B", "C"}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+ 
+  <footer>Guida di riferimento — Sift (Array &amp; Dictionary)</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+local currentThread: thread? = nil
+
+local function SetupAutoUnmount(props: Props)
+	Vide.effect(function()
+		local currentTable = props.AdminNotificationSource()
+
+		if #currentTable == 0 then
+			if not currentThread then
+				currentThread = task.delay(FrameDuration, function()
+					props.Mounted(false)
+					currentThread = nil
+				end)
+			end
+		else
+			if currentThread then
+				task.cancel(currentThread)
+				currentThread = nil
+			end
+		end
+	end)
+
+	Vide.cleanup(function()
+		if currentThread then
+			task.cancel(currentThread)
+			currentThread = nil
+		end
+	end)
+end

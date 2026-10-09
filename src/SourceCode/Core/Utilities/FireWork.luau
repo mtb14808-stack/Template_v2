@@ -1,0 +1,206 @@
+export type FireWorkHandler = {
+	Colors: { Color3 },
+	StartPlayerFireWork: (Amount: number) -> (),
+}
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+
+local VfxHandler = require(script.Parent.Vfx)
+local FireWorkEXplotsionVfx = ReplicatedStorage.Assets.VFX.FireWork.Explosion :: Attachment
+local FireWorkModel = ReplicatedStorage.Assets.VFX.FireWork.default
+
+local function GetCirclePoint(origin: BasePart, index: number, totalAmount: number, radius: number): CFrame
+	local originCFrame = origin.CFrame
+	local angle = (index - 1) * (math.pi * 2 / totalAmount)
+	local xOffset = math.cos(angle) * radius
+	local zOffset = math.sin(angle) * radius
+
+	return originCFrame * CFrame.new(xOffset, 0, zOffset)
+end
+
+local FireWorkHandler = {}
+
+FireWorkHandler.Colors = {
+	[1] = Color3.fromRGB(255, 0, 0),
+	[2] = Color3.fromRGB(255, 255, 0),
+	[3] = Color3.fromRGB(0, 255, 0),
+	[4] = Color3.fromRGB(0, 255, 255),
+	[5] = Color3.fromRGB(0, 0, 255),
+	[6] = Color3.fromRGB(255, 0, 255),
+	[7] = Color3.fromRGB(255, 170, 0),
+	[8] = Color3.fromRGB(255, 255, 255),
+}
+
+local INITIAL_LAUNCH_COUNT = 3
+local MICRO_DELAY = 0.5
+local SEQUENTIAL_WAIT = 2
+local FLY_TIME = 1.5
+local CIRCLE_RADIUS = 7
+
+local BASE_RISE_HEIGHT = 18
+
+local INITIAL_SUB_DELAY_SECOND = 0.5
+local INITIAL_SUB_DELAY_THIRD = 0.5
+
+local SEQUENTIAL_SUB_DELAY_SECOND = 0.5
+local SEQUENTIAL_SUB_DELAY_THIRD = 0.5
+
+local Trail = ReplicatedStorage.Assets.VFX.FireWork.Trail
+
+function FireWorkHandler.StartPlayerFireWork(Amount: number)
+	warn("FARE COLORI DIVERSI PIU ACCESSI E BELLI ")
+	warn("FARE SOUND BELLI PER FIRE WORK COME QUELLI DI LIEF")
+	local player = game.Players.LocalPlayer
+	if not player then
+		return
+	end
+	local Char = player.Character
+	if not Char then
+		return
+	end
+	local Rootpart = Char:FindFirstChild("HumanoidRootPart") :: BasePart
+	if not Rootpart then
+		return
+	end
+
+	local fireworksFolder = workspace:FindFirstChild("FireWorks") or Instance.new("Folder", workspace)
+	fireworksFolder.Name = "FireWorks"
+
+	local rng = Random.new()
+
+	local function launchAndExplode(index, isInitial)
+		local startCFrame = GetCirclePoint(Rootpart, index, Amount, CIRCLE_RADIUS)
+
+		local NewPart = Instance.new("Part")
+		NewPart.CanCollide = false
+		NewPart.Anchored = true
+		NewPart.CFrame = startCFrame
+		NewPart.Size = Vector3.new(0.1, 0.1, 0.1)
+		NewPart.Transparency = 1
+		NewPart.Name = "Firework"
+		NewPart.Parent = fireworksFolder
+
+		local Color = FireWorkHandler.Colors[math.random(1, #FireWorkHandler.Colors)]
+		local colorSeq = ColorSequence.new(Color)
+
+		local newTrail = Trail:Clone()
+		newTrail.Color = colorSeq
+		newTrail.Parent = NewPart
+
+		local meshPartClone = FireWorkModel:Clone() :: BasePart
+		meshPartClone.CanCollide = false
+		meshPartClone.Anchored = false
+		meshPartClone.CFrame = startCFrame
+		meshPartClone.Parent = NewPart
+
+		local mainWeld = Instance.new("WeldConstraint")
+		mainWeld.Part0 = NewPart
+		mainWeld.Part1 = meshPartClone
+		mainWeld.Parent = meshPartClone
+
+		local fwFrequency = rng:NextNumber(1, 2)
+		local fwAmplitude = rng:NextNumber(0, 1)
+		local fwPhaseOffset = rng:NextNumber(0, math.pi * 2)
+
+		local radialDirection = (startCFrame.Position - Rootpart.Position)
+		radialDirection = Vector3.new(radialDirection.X, 0, radialDirection.Z)
+
+		if radialDirection.Magnitude > 0 then
+			radialDirection = radialDirection.Unit
+		else
+			radialDirection = Rootpart.CFrame.LookVector
+		end
+
+		local elapsedTime = 0
+
+		local function calculatePosition(t: number): Vector3
+			local alpha = math.min(t / FLY_TIME, 1)
+			local linearY = alpha * BASE_RISE_HEIGHT
+			local waveOffset = math.sin(alpha * math.pi * 2 * fwFrequency + fwPhaseOffset) * fwAmplitude
+
+			local basePos = startCFrame.Position + Vector3.new(0, linearY, 0)
+			return basePos + (radialDirection * waveOffset)
+		end
+
+		while elapsedTime < FLY_TIME do
+			local dt = RunService.RenderStepped:Wait()
+			elapsedTime += dt
+
+			local currentPos = calculatePosition(elapsedTime)
+			NewPart.CFrame = CFrame.new(currentPos)
+		end
+
+		local peakPosition = NewPart.Position
+
+		local function applyColorToVfx(explosionAttachment)
+			for _, child in ipairs(explosionAttachment:GetChildren()) do
+				if child:IsA("ParticleEmitter") then
+					child.Color = colorSeq
+				end
+			end
+		end
+
+		local mainExp = FireWorkEXplotsionVfx:Clone()
+		applyColorToVfx(mainExp)
+		mainExp.WorldCFrame = CFrame.new(peakPosition)
+		mainExp.Parent = workspace.Terrain
+
+		VfxHandler.Emit(mainExp, 24)
+		Debris:AddItem(mainExp, 3)
+
+		NewPart:Destroy()
+
+		local delaySecond = isInitial and INITIAL_SUB_DELAY_SECOND or SEQUENTIAL_SUB_DELAY_SECOND
+		local delayThird = isInitial and INITIAL_SUB_DELAY_THIRD or SEQUENTIAL_SUB_DELAY_THIRD
+
+		task.wait(delaySecond)
+		local subExp2 = FireWorkEXplotsionVfx:Clone()
+		applyColorToVfx(subExp2)
+		local offset2 = Vector3.new(rng:NextInteger(-12, 12), rng:NextInteger(-8, 12), rng:NextInteger(-12, 12))
+		subExp2.WorldCFrame = CFrame.new(peakPosition + offset2)
+		subExp2.Parent = workspace.Terrain
+
+		VfxHandler.Emit(subExp2, 24)
+		Debris:AddItem(subExp2, 3)
+
+		task.wait(delayThird)
+		local subExp3 = FireWorkEXplotsionVfx:Clone()
+		applyColorToVfx(subExp3)
+		local offset3 = Vector3.new(rng:NextInteger(-12, 12), rng:NextInteger(-8, 12), rng:NextInteger(-12, 12))
+		subExp3.WorldCFrame = CFrame.new(peakPosition + offset3)
+		subExp3.Parent = workspace.Terrain
+
+		VfxHandler.Emit(subExp3, 20)
+		Debris:AddItem(subExp3, 3)
+	end
+
+	task.spawn(function()
+		for batchStart = 1, Amount, INITIAL_LAUNCH_COUNT do
+			for j = 0, INITIAL_LAUNCH_COUNT - 1 do
+				local currentFireworkIndex = batchStart + j
+
+				if currentFireworkIndex > Amount then
+					break
+				end
+
+				task.spawn(function()
+					local launchDelay = j * MICRO_DELAY
+					if launchDelay > 0 then
+						task.wait(launchDelay)
+					end
+
+					local isInitialBatch = (batchStart == 1)
+					launchAndExplode(currentFireworkIndex, isInitialBatch)
+				end)
+			end
+
+			if batchStart + INITIAL_LAUNCH_COUNT <= Amount then
+				task.wait(SEQUENTIAL_WAIT)
+			end
+		end
+	end)
+end
+
+return FireWorkHandler

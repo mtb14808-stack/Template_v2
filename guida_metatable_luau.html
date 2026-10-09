@@ -1,0 +1,712 @@
+c:\Users\foadf\Desktop\Roblox Projects\GoldGame\FrameWork\src\SourceCode\Core\Utilities\VideChildrenHandler.luau<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guida Completa alle Metatable in Luau</title>
+<style>
+  :root {
+    --accent: #6366f1;
+    --accent-dark: #4338ca;
+    --border: #e2e8f0;
+    --code-bg: #1e1e2e;
+    --code-text: #e2e8f0;
+    --keyword: #c792ea;
+    --string: #c3e88d;
+    --comment: #7c8fa6;
+    --func: #82aaff;
+    --num: #f78c6c;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 0 0 60px;
+    background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 400px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.65;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, #312e81, #4f46e5 60%, #6366f1);
+    color: white;
+    padding: 56px 24px 44px;
+    text-align: center;
+  }
+  .hero h1 { margin: 0 0 10px; font-size: 2.2rem; }
+  .hero p { margin: 0 auto; opacity: 0.9; font-size: 1.05rem; max-width: 620px; }
+  .hero .pill {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 14px;
+    border-radius: 30px;
+    font-size: 0.78rem;
+    margin-bottom: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .container { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  .toc {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin: -30px auto 40px;
+    box-shadow: 0 10px 30px rgba(30,27,75,0.1);
+    position: relative;
+    z-index: 2;
+  }
+  .toc h2 { margin-top: 0; font-size: 1.1rem; color: var(--accent-dark); }
+  .toc ol { columns: 2; margin: 0; padding-left: 20px; font-size: 0.9rem; }
+  .toc li { margin-bottom: 6px; break-inside: avoid; }
+  .toc a { color: #334155; text-decoration: none; }
+  .toc a:hover { color: var(--accent-dark); text-decoration: underline; }
+
+  .section { margin-top: 56px; scroll-margin-top: 20px; }
+  .section:first-of-type { margin-top: 0; }
+
+  h2.stitle {
+    font-size: 1.4rem;
+    color: white;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    margin: 0 0 20px;
+    padding: 14px 22px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.25);
+  }
+  h2.stitle .num {
+    background: rgba(255,255,255,0.25);
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; flex-shrink: 0;
+  }
+
+  h3 {
+    font-size: 1.05rem;
+    color: var(--accent-dark);
+    margin: 28px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  p { margin: 10px 0; font-size: 0.95rem; }
+
+  .lead {
+    background: #eef2ff;
+    border-left: 4px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0 24px;
+    color: #312e81;
+    font-size: 0.94rem;
+  }
+
+  .warn {
+    background: #fffbeb;
+    border-left: 4px solid var(--amber);
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: #78350f;
+  }
+  .warn strong { color: #b45309; }
+
+  .tip {
+    background: #ecfdf5;
+    border-left: 4px solid var(--green);
+    padding: 14px 18px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    color: #065f46;
+  }
+  .tip strong { color: #047857; }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 16px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.83rem;
+    line-height: 1.55;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    margin: 10px 0 20px;
+  }
+  .kw { color: var(--keyword); }
+  .str { color: var(--string); }
+  .cmt { color: var(--comment); font-style: italic; }
+  .fn { color: var(--func); }
+  .nm { color: var(--num); }
+
+  code.inline {
+    background: #eef2ff;
+    color: var(--accent-dark);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  table.props {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    margin: 12px 0 20px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  table.props th {
+    text-align: left;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    padding: 10px 14px;
+    font-weight: 600;
+  }
+  table.props td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.props tr:nth-child(even) { background: #fafbff; }
+  table.props code.inline { font-size: 0.8rem; }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) {
+    .grid2 { grid-template-columns: 1fr; }
+    .toc ol { columns: 1; }
+  }
+  .grid2 .col-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  hr.divider { border: none; border-top: 2px dashed var(--border); margin: 50px 0; }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.85rem; margin-top: 60px; }
+
+  .badge-list { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 6px; }
+  .mini-badge { background: rgba(255,255,255,0.15); padding: 3px 12px; border-radius: 20px; font-size: 0.78rem; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="pill">Luau · Roblox</div>
+  <h1>Guida Completa alle Metatable</h1>
+  <p>Cosa sono, come funzionano e quando ha davvero senso usarle: da <code style="background:rgba(255,255,255,0.15);padding:2px 8px;border-radius:5px;">__index</code> alle classi OOP, fino alle tabelle di sola lettura.</p>
+  <div class="badge-list" style="justify-content:center;">
+    <span class="mini-badge">__index</span>
+    <span class="mini-badge">__newindex</span>
+    <span class="mini-badge">OOP</span>
+    <span class="mini-badge">Operator Overloading</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="toc">
+    <h2>📑 Indice</h2>
+    <ol>
+      <li><a href="#cosa">Cosa sono le Metatable</a></li>
+      <li><a href="#set">setmetatable() e getmetatable()</a></li>
+      <li><a href="#index">__index — il più importante</a></li>
+      <li><a href="#newindex">__newindex — intercettare le scritture</a></li>
+      <li><a href="#oop">Costruire una classe OOP</a></li>
+      <li><a href="#aritmetici">Metamethods aritmetici</a></li>
+      <li><a href="#confronto">Metamethods di confronto</a></li>
+      <li><a href="#tostring">__tostring</a></li>
+      <li><a href="#call">__call</a></li>
+      <li><a href="#len-concat">__len e __concat</a></li>
+      <li><a href="#readonly">Tabelle di sola lettura</a></li>
+      <li><a href="#raw">Bypassare le metatable: raw*</a></li>
+      <li><a href="#quando">Quando usarle davvero (in Roblox)</a></li>
+      <li><a href="#cheatsheet">Cheat Sheet Finale</a></li>
+    </ol>
+  </div>
+
+  <!-- 1 -->
+  <div class="section" id="cosa">
+    <h2 class="stitle"><span class="num">1</span>Cosa sono le Metatable</h2>
+
+    <p>Una <strong>metatable</strong> è una tabella speciale che puoi collegare a un'altra tabella per cambiarne il <strong>comportamento di default</strong>. Normalmente una tabella Lua fa solo poche cose: leggere una chiave, scriverla, calcolarne la lunghezza. Le metatable ti permettono di intercettare e ridefinire ognuna di queste operazioni tramite dei campi speciali chiamati <strong>metamethods</strong> (nomi che iniziano sempre con due underscore, es. <code class="inline">__index</code>).</p>
+
+    <div class="lead">
+      In pratica le metatable sono il meccanismo che sta dietro a quasi tutto ciò che sembra "magico" in Luau:
+      <ul style="margin:8px 0 0;">
+        <li>Come funzionano le <strong>classi</strong> e l'<strong>ereditarietà</strong> (non esistono nativamente in Lua — sono simulate con metatable).</li>
+        <li>Come <code class="inline">Vector3.new(1,2,3) + Vector3.new(1,1,1)</code> riesce a sommare due vettori con <code class="inline">+</code>.</li>
+        <li>Come <code class="inline">print(oggetto)</code> può stampare qualcosa di leggibile invece di <code class="inline">table: 0x123abc</code>.</li>
+        <li>Come una libreria può rendere una tabella "di sola lettura" o "readonly".</li>
+      </ul>
+    </div>
+
+    <p>Ogni tabella può avere <strong>al massimo una</strong> metatable, ma la stessa metatable può essere condivisa da tante tabelle diverse — è esattamente così che funzionano le classi.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 2 -->
+  <div class="section" id="set">
+    <h2 class="stitle"><span class="num">2</span>setmetatable() e getmetatable()</h2>
+
+    <table class="props">
+      <tr><th>Funzione</th><th>Cosa fa</th></tr>
+      <tr>
+        <td><code class="inline">setmetatable(t, mt)</code></td>
+        <td>Collega la tabella <code class="inline">mt</code> come metatable di <code class="inline">t</code>. Restituisce <code class="inline">t</code> stesso (comodo per concatenare).</td>
+      </tr>
+      <tr>
+        <td><code class="inline">getmetatable(t)</code></td>
+        <td>Restituisce la metatable di <code class="inline">t</code>, o <code class="inline">nil</code> se non ne ha una.</td>
+      </tr>
+    </table>
+
+    <pre><span class="kw">local</span> t = {}
+<span class="kw">local</span> mt = { __index = <span class="kw">function</span>(table, key)
+	<span class="kw">return</span> <span class="str">"chiave '"</span> .. key .. <span class="str">"' non trovata!"</span>
+<span class="kw">end</span> }
+
+setmetatable(t, mt)
+
+print(t.Nome) <span class="cmt">--&gt; "chiave 'Nome' non trovata!"</span>
+print(getmetatable(t) == mt) <span class="cmt">--&gt; true</span></pre>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 3 -->
+  <div class="section" id="index">
+    <h2 class="stitle"><span class="num">3</span>__index — il più importante</h2>
+
+    <p><code class="inline">__index</code> si attiva quando leggi una chiave che <strong>non esiste</strong> nella tabella. Può essere di due tipi:</p>
+
+    <table class="props">
+      <tr><th>Tipo</th><th>Comportamento</th></tr>
+      <tr><td><strong>Una tabella</strong></td><td>Lua cerca la chiave mancante in quella tabella (comportamento "eredita da").</td></tr>
+      <tr><td><strong>Una funzione</strong></td><td>Viene chiamata come <code class="inline">function(t, key)</code> e il suo valore di ritorno diventa il risultato della lettura.</td></tr>
+    </table>
+
+    <h3>__index come valore di default</h3>
+    <pre><span class="kw">local</span> defaults = { Velocita = 16, Salute = 100 }
+
+<span class="kw">local</span> player = setmetatable({ Velocita = 24 }, { __index = defaults })
+
+print(player.Velocita) <span class="cmt">--&gt; 24  (esiste già in player, __index non serve)</span>
+print(player.Salute)   <span class="cmt">--&gt; 100 (non esiste in player, va a cercarla in defaults)</span></pre>
+
+    <h3>__index come funzione (calcolato al volo)</h3>
+    <pre><span class="kw">local</span> rettangolo = setmetatable({ Larghezza = 4, Altezza = 3 }, {
+	__index = <span class="kw">function</span>(self, key)
+		<span class="kw">if</span> key == <span class="str">"Area"</span> <span class="kw">then</span>
+			<span class="kw">return</span> self.Larghezza * self.Altezza
+		<span class="kw">end</span>
+		<span class="kw">return</span> <span class="kw">nil</span>
+	<span class="kw">end</span>,
+})
+
+print(rettangolo.Area) <span class="cmt">--&gt; 12, calcolato ogni volta che lo leggi</span></pre>
+
+    <div class="warn">
+      <strong>Attenzione:</strong> <code class="inline">__index</code> scatta SOLO quando la chiave non è già presente nella tabella stessa. Se <code class="inline">player.Velocita</code> esistesse già, <code class="inline">__index</code> non verrebbe mai chiamato per quella chiave.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 4 -->
+  <div class="section" id="newindex">
+    <h2 class="stitle"><span class="num">4</span>__newindex — intercettare le scritture</h2>
+
+    <p>Il contrario di <code class="inline">__index</code>: scatta quando provi a <strong>scrivere</strong> una chiave che <strong>non esiste ancora</strong> nella tabella. Se la chiave esiste già, la scrittura avviene normalmente e <code class="inline">__newindex</code> non viene chiamato.</p>
+
+    <pre><span class="kw">local</span> log = {}
+
+<span class="kw">local</span> watched = setmetatable({}, {
+	__newindex = <span class="kw">function</span>(t, key, value)
+		table.insert(log, key .. <span class="str">" = "</span> .. tostring(value))
+		rawset(t, key, value) <span class="cmt">-- scrive DAVVERO nella tabella, bypassando la metatable</span>
+	<span class="kw">end</span>,
+})
+
+watched.Nome = <span class="str">"Mario"</span>
+watched.Vita = 100
+
+print(log[1]) <span class="cmt">--&gt; "Nome = Mario"</span>
+print(watched.Nome) <span class="cmt">--&gt; "Mario" (è stato scritto davvero grazie a rawset)</span></pre>
+
+    <div class="warn">
+      <strong>Fondamentale:</strong> dentro <code class="inline">__newindex</code> devi usare <code class="inline">rawset(t, key, value)</code> per scrivere davvero il valore. Se scrivessi <code class="inline">t[key] = value</code> normalmente, richiameresti di nuovo <code class="inline">__newindex</code> — <strong>loop infinito</strong>.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 5 -->
+  <div class="section" id="oop">
+    <h2 class="stitle"><span class="num">5</span>Costruire una classe OOP</h2>
+
+    <p>Lua non ha classi native: si simulano combinando <code class="inline">__index</code> con una funzione costruttore. È il pattern OOP standard che trovi in praticamente ogni modulo Roblox (Signal, Maid, Promise, ecc.).</p>
+
+    <pre><span class="kw">local</span> Account = {}
+Account.__index = Account <span class="cmt">-- la tabella è metatable di se stessa!</span>
+
+<span class="kw">function</span> Account.new(balance: number)
+	<span class="kw">local</span> self = setmetatable({}, Account)
+	self.Balance = balance
+	<span class="kw">return</span> self
+<span class="kw">end</span>
+
+<span class="kw">function</span> Account:Deposit(amount: number)
+	self.Balance += amount
+<span class="kw">end</span>
+
+<span class="kw">function</span> Account:Withdraw(amount: number)
+	<span class="kw">if</span> amount &gt; self.Balance <span class="kw">then</span>
+		error(<span class="str">"Fondi insufficienti"</span>)
+	<span class="kw">end</span>
+	self.Balance -= amount
+<span class="kw">end</span>
+
+<span class="kw">local</span> conto = Account.new(100)
+conto:Deposit(50)
+print(conto.Balance) <span class="cmt">--&gt; 150</span></pre>
+
+    <p>Quando scrivi <code class="inline">conto:Deposit(50)</code>, Lua traduce in <code class="inline">conto.Deposit(conto, 50)</code>. Ma <code class="inline">conto</code> non ha una chiave <code class="inline">Deposit</code> — quindi scatta <code class="inline">__index</code>, che punta ad <code class="inline">Account</code>, dove <code class="inline">Deposit</code> esiste davvero. Ecco perché ogni istanza "eredita" i metodi.</p>
+
+    <h3>Ereditarietà tra classi</h3>
+    <pre><span class="kw">local</span> SavingsAccount = setmetatable({}, { __index = Account }) <span class="cmt">-- eredita da Account</span>
+SavingsAccount.__index = SavingsAccount
+
+<span class="kw">function</span> SavingsAccount.new(balance: number, rate: number)
+	<span class="kw">local</span> self = Account.new(balance) <span class="cmt">-- riusa il costruttore della classe base</span>
+	self.Rate = rate
+	<span class="kw">return</span> setmetatable(self, SavingsAccount) <span class="cmt">-- "promuove" self alla sottoclasse</span>
+<span class="kw">end</span>
+
+<span class="kw">function</span> SavingsAccount:ApplyInterest()
+	self.Balance += self.Balance * self.Rate
+<span class="kw">end</span>
+
+<span class="kw">local</span> risparmio = SavingsAccount.new(1000, 0.05)
+risparmio:Deposit(200)   <span class="cmt">-- metodo ereditato da Account</span>
+risparmio:ApplyInterest() <span class="cmt">-- metodo proprio di SavingsAccount</span>
+print(risparmio.Balance) <span class="cmt">--&gt; 1260</span></pre>
+
+    <div class="tip">
+      <strong>Catena di ricerca:</strong> quando cerchi <code class="inline">risparmio:Deposit</code>, Lua controlla prima <code class="inline">risparmio</code> (non c'è), poi <code class="inline">SavingsAccount</code> tramite il suo <code class="inline">__index</code> (non c'è nemmeno lì), poi <code class="inline">Account</code> tramite IL <code class="inline">__index</code> di SavingsAccount stesso (che punta ad Account) — e lì lo trova. Puoi incatenare quante classi vuoi così.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 6 -->
+  <div class="section" id="aritmetici">
+    <h2 class="stitle"><span class="num">6</span>Metamethods aritmetici</h2>
+
+    <p>Permettono di usare gli operatori matematici (<code class="inline">+ - * / % ^ -</code>) direttamente sulle tue tabelle, esattamente come fai già con <code class="inline">Vector3</code> o <code class="inline">Color3</code>.</p>
+
+    <table class="props">
+      <tr><th>Metamethod</th><th>Operatore</th><th>Firma</th></tr>
+      <tr><td><code class="inline">__add</code></td><td><code class="inline">a + b</code></td><td><code class="inline">function(a, b)</code></td></tr>
+      <tr><td><code class="inline">__sub</code></td><td><code class="inline">a - b</code></td><td><code class="inline">function(a, b)</code></td></tr>
+      <tr><td><code class="inline">__mul</code></td><td><code class="inline">a * b</code></td><td><code class="inline">function(a, b)</code></td></tr>
+      <tr><td><code class="inline">__div</code></td><td><code class="inline">a / b</code></td><td><code class="inline">function(a, b)</code></td></tr>
+      <tr><td><code class="inline">__mod</code></td><td><code class="inline">a % b</code></td><td><code class="inline">function(a, b)</code></td></tr>
+      <tr><td><code class="inline">__pow</code></td><td><code class="inline">a ^ b</code></td><td><code class="inline">function(a, b)</code></td></tr>
+      <tr><td><code class="inline">__unm</code></td><td><code class="inline">-a</code> (negazione unaria)</td><td><code class="inline">function(a)</code></td></tr>
+      <tr><td><code class="inline">__idiv</code></td><td><code class="inline">a // b</code> (divisione intera, estensione Luau)</td><td><code class="inline">function(a, b)</code></td></tr>
+    </table>
+
+    <pre><span class="kw">local</span> Vector2D = {}
+Vector2D.__index = Vector2D
+
+<span class="kw">function</span> Vector2D.new(x: number, y: number)
+	<span class="kw">return</span> setmetatable({ X = x, Y = y }, Vector2D)
+<span class="kw">end</span>
+
+Vector2D.__add = <span class="kw">function</span>(a, b)
+	<span class="kw">return</span> Vector2D.new(a.X + b.X, a.Y + b.Y)
+<span class="kw">end</span>
+
+Vector2D.__mul = <span class="kw">function</span>(a, b)
+	<span class="cmt">-- b può essere un altro Vector2D O un numero, gestiamo entrambi</span>
+	<span class="kw">if</span> typeof(b) == <span class="str">"number"</span> <span class="kw">then</span>
+		<span class="kw">return</span> Vector2D.new(a.X * b, a.Y * b)
+	<span class="kw">end</span>
+	<span class="kw">return</span> Vector2D.new(a.X * b.X, a.Y * b.Y)
+<span class="kw">end</span>
+
+<span class="kw">local</span> a = Vector2D.new(1, 2)
+<span class="kw">local</span> b = Vector2D.new(3, 4)
+
+<span class="kw">local</span> somma = a + b        <span class="cmt">-- Vector2D(4, 6)</span>
+<span class="kw">local</span> scalato = a * 10     <span class="cmt">-- Vector2D(10, 20)</span></pre>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 7 -->
+  <div class="section" id="confronto">
+    <h2 class="stitle"><span class="num">7</span>Metamethods di confronto</h2>
+
+    <table class="props">
+      <tr><th>Metamethod</th><th>Operatore</th></tr>
+      <tr><td><code class="inline">__eq</code></td><td><code class="inline">a == b</code></td></tr>
+      <tr><td><code class="inline">__lt</code></td><td><code class="inline">a &lt; b</code></td></tr>
+      <tr><td><code class="inline">__le</code></td><td><code class="inline">a &lt;= b</code></td></tr>
+    </table>
+
+    <div class="warn">
+      <strong>Nota:</strong> <code class="inline">__eq</code> scatta solo confrontando due tabelle (non un numero con una tabella), e solo se le due tabelle <strong>non sono già lo stesso riferimento</strong> in memoria (in quel caso Lua le considera già uguali senza nemmeno chiamare <code class="inline">__eq</code>).
+    </div>
+
+    <pre><span class="kw">local</span> Card = {}
+Card.__index = Card
+
+<span class="kw">function</span> Card.new(rank: number)
+	<span class="kw">return</span> setmetatable({ Rank = rank }, Card)
+<span class="kw">end</span>
+
+Card.__eq = <span class="kw">function</span>(a, b) <span class="kw">return</span> a.Rank == b.Rank <span class="kw">end</span>
+Card.__lt = <span class="kw">function</span>(a, b) <span class="kw">return</span> a.Rank &lt; b.Rank <span class="kw">end</span>
+Card.__le = <span class="kw">function</span>(a, b) <span class="kw">return</span> a.Rank &lt;= b.Rank <span class="kw">end</span>
+
+<span class="kw">local</span> re = Card.new(13)
+<span class="kw">local</span> fante = Card.new(11)
+
+print(re &gt; fante) <span class="cmt">--&gt; true (Lua riusa __lt invertendo gli argomenti)</span>
+print(re == Card.new(13)) <span class="cmt">--&gt; true</span></pre>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 8 -->
+  <div class="section" id="tostring">
+    <h2 class="stitle"><span class="num">8</span>__tostring</h2>
+
+    <p>Personalizza cosa succede quando la tabella viene convertita in stringa, ad esempio con <code class="inline">print()</code> o <code class="inline">tostring()</code>.</p>
+
+    <pre><span class="kw">local</span> Vector2D = {}
+Vector2D.__index = Vector2D
+
+<span class="kw">function</span> Vector2D.new(x, y)
+	<span class="kw">return</span> setmetatable({ X = x, Y = y }, Vector2D)
+<span class="kw">end</span>
+
+Vector2D.__tostring = <span class="kw">function</span>(self)
+	<span class="kw">return</span> `Vector2D({self.X}, {self.Y})`
+<span class="kw">end</span>
+
+<span class="kw">local</span> v = Vector2D.new(3, 4)
+print(v) <span class="cmt">--&gt; Vector2D(3, 4)   invece di "table: 0x123abc"</span></pre>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 9 -->
+  <div class="section" id="call">
+    <h2 class="stitle"><span class="num">9</span>__call</h2>
+
+    <p>Rende una tabella "chiamabile" come se fosse una funzione — utile per pattern come i costruttori compatti o le classi "callable" (es. <code class="inline">Signal(...)</code> invece di <code class="inline">Signal.new(...)</code>).</p>
+
+    <pre><span class="kw">local</span> Counter = {}
+Counter.__index = Counter
+
+Counter.__call = <span class="kw">function</span>(self)
+	self.Value += 1
+	<span class="kw">return</span> self.Value
+<span class="kw">end</span>
+
+<span class="kw">local</span> counter = setmetatable({ Value = 0 }, Counter)
+
+print(counter()) <span class="cmt">--&gt; 1</span>
+print(counter()) <span class="cmt">--&gt; 2</span></pre>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 10 -->
+  <div class="section" id="len-concat">
+    <h2 class="stitle"><span class="num">10</span>__len e __concat</h2>
+
+    <div class="grid2">
+      <div>
+        <div class="col-label">__len — operatore #</div>
+        <pre><span class="kw">local</span> Inventory = setmetatable({ Slots = { <span class="str">"Spada"</span>, <span class="str">"Scudo"</span> } }, {
+	__len = <span class="kw">function</span>(self)
+		<span class="kw">return</span> #self.Slots
+	<span class="kw">end</span>,
+})
+
+print(#Inventory) <span class="cmt">--&gt; 2</span></pre>
+      </div>
+      <div>
+        <div class="col-label">__concat — operatore ..</div>
+        <pre><span class="kw">local</span> Nome = setmetatable({ Valore = <span class="str">"Mario"</span> }, {
+	__concat = <span class="kw">function</span>(a, b)
+		<span class="kw">local</span> sa = typeof(a) == <span class="str">"table"</span> <span class="kw">and</span> a.Valore <span class="kw">or</span> a
+		<span class="kw">local</span> sb = typeof(b) == <span class="str">"table"</span> <span class="kw">and</span> b.Valore <span class="kw">or</span> b
+		<span class="kw">return</span> sa .. sb
+	<span class="kw">end</span>,
+})
+
+print(Nome .. <span class="str">" Rossi"</span>) <span class="cmt">--&gt; "Mario Rossi"</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 11 -->
+  <div class="section" id="readonly">
+    <h2 class="stitle"><span class="num">11</span>Tabelle di sola lettura</h2>
+
+    <p>Combinando <code class="inline">__newindex</code> (blocca le scritture) e <code class="inline">__metatable</code> (blocca l'accesso alla metatable stessa) si ottiene una tabella immutabile — ottimo per configurazioni condivise che nessun modulo dovrebbe poter modificare per errore.</p>
+
+    <pre><span class="kw">local</span> <span class="kw">function</span> ReadOnly(t: {[<span class="kw">any</span>]: <span class="kw">any</span>})
+	<span class="kw">return</span> setmetatable({}, {
+		__index = t,
+		__newindex = <span class="kw">function</span>(_, key, _)
+			error(<span class="str">"Tentativo di modificare una tabella read-only: "</span> .. tostring(key), 2)
+		<span class="kw">end</span>,
+		__metatable = <span class="str">"Locked"</span>, <span class="cmt">-- getmetatable() restituirà questa stringa, non la vera metatable</span>
+	})
+<span class="kw">end</span>
+
+<span class="kw">local</span> Config = ReadOnly({
+	MaxPlayers = 10,
+	GameName = <span class="str">"Il Mio Gioco"</span>,
+})
+
+print(Config.MaxPlayers) <span class="cmt">--&gt; 10, la lettura funziona normalmente</span>
+Config.MaxPlayers = 20 <span class="cmt">-- ERRORE: "Tentativo di modificare una tabella read-only: MaxPlayers"</span></pre>
+
+    <div class="tip">
+      <strong>__metatable</strong> impedisce anche che qualcuno chiami <code class="inline">setmetatable(Config, altraCosa)</code> per "scassinare" la protezione — se è impostato, <code class="inline">setmetatable</code> lancia un errore su quella tabella.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 12 -->
+  <div class="section" id="raw">
+    <h2 class="stitle"><span class="num">12</span>Bypassare le metatable: raw*</h2>
+
+    <p>A volte hai bisogno di leggere/scrivere/confrontare una tabella <strong>ignorando</strong> completamente i suoi metamethods — ad esempio dentro l'implementazione dei metamethods stessi, per evitare loop infiniti.</p>
+
+    <table class="props">
+      <tr><th>Funzione</th><th>Equivalente a</th><th>Ma...</th></tr>
+      <tr><td><code class="inline">rawget(t, k)</code></td><td><code class="inline">t[k]</code></td><td>...ignora <code class="inline">__index</code></td></tr>
+      <tr><td><code class="inline">rawset(t, k, v)</code></td><td><code class="inline">t[k] = v</code></td><td>...ignora <code class="inline">__newindex</code></td></tr>
+      <tr><td><code class="inline">rawequal(a, b)</code></td><td><code class="inline">a == b</code></td><td>...ignora <code class="inline">__eq</code></td></tr>
+      <tr><td><code class="inline">rawlen(t)</code></td><td><code class="inline">#t</code></td><td>...ignora <code class="inline">__len</code></td></tr>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 13 -->
+  <div class="section" id="quando">
+    <h2 class="stitle"><span class="num">13</span>Quando usarle davvero (in Roblox)</h2>
+
+    <div class="grid2">
+      <div>
+        <div class="col-label">✅ Usale quando...</div>
+        <ul style="font-size:0.9rem;">
+          <li>Stai creando un <strong>modulo/classe riutilizzabile</strong> (Signal, Maid, Promise, Spring, Trove...).</li>
+          <li>Vuoi <strong>ereditarietà</strong> tra "classi" custom.</li>
+          <li>Vuoi operatori matematici naturali su un tuo tipo (es. una classe Vettore custom).</li>
+          <li>Vuoi <strong>proteggere</strong> una config condivisa da scritture accidentali.</li>
+          <li>Vuoi valori di <strong>default automatici</strong> senza riempire ogni tabella a mano.</li>
+          <li>Vuoi loggare/validare ogni scrittura su una tabella (debug, dev tools).</li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-label">🚫 NON servono quando...</div>
+        <ul style="font-size:0.9rem;">
+          <li>Ti basta una <strong>tabella semplice</strong> con pochi campi — aggiungono complessità inutile.</li>
+          <li>Il tuo "oggetto" viene creato/distrutto migliaia di volte al frame — hanno un piccolo overhead di performance.</li>
+          <li>Puoi risolvere lo stesso problema con una <strong>funzione pura</strong> che riceve dati e restituisce dati.</li>
+          <li>Stai solo raggruppando dati (DTO/config) senza bisogno di metodi o comportamento custom.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="lead">
+      Regola pratica: se ti stai chiedendo "questa cosa ha bisogno di <em>comportamento</em> (metodi, ereditarietà, operatori) oltre che di semplici dati?" — se la risposta è sì, le metatable sono lo strumento giusto. Se ti serve solo un contenitore di valori, una tabella normale va benissimo.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 14 -->
+  <div class="section" id="cheatsheet">
+    <h2 class="stitle"><span class="num">14</span>Cheat Sheet Finale</h2>
+
+    <table class="props">
+      <tr><th>Metamethod</th><th>Si attiva quando...</th></tr>
+      <tr><td><code class="inline">__index</code></td><td>Leggi una chiave che non esiste nella tabella</td></tr>
+      <tr><td><code class="inline">__newindex</code></td><td>Scrivi una chiave che non esiste ancora nella tabella</td></tr>
+      <tr><td><code class="inline">__call</code></td><td>Chiami la tabella come una funzione: <code class="inline">t()</code></td></tr>
+      <tr><td><code class="inline">__tostring</code></td><td><code class="inline">tostring(t)</code> o <code class="inline">print(t)</code></td></tr>
+      <tr><td><code class="inline">__eq / __lt / __le</code></td><td><code class="inline">== / &lt; / &lt;=</code> tra due tabelle</td></tr>
+      <tr><td><code class="inline">__add __sub __mul __div __mod __pow __unm __idiv</code></td><td>Operatori aritmetici <code class="inline">+ - * / % ^ - //</code></td></tr>
+      <tr><td><code class="inline">__concat</code></td><td>Operatore <code class="inline">..</code></td></tr>
+      <tr><td><code class="inline">__len</code></td><td>Operatore <code class="inline">#</code></td></tr>
+      <tr><td><code class="inline">__metatable</code></td><td>Blocca/falsifica cosa restituisce <code class="inline">getmetatable()</code> e vieta <code class="inline">setmetatable()</code></td></tr>
+      <tr><td><code class="inline">__iter</code></td><td>(estensione Luau) personalizza il comportamento nel <code class="inline">for ... in t</code></td></tr>
+    </table>
+
+    <div class="tip" style="margin-top:20px;">
+      <strong>Il pattern OOP da ricordare a memoria:</strong>
+      <pre style="margin-top:10px;"><span class="kw">local</span> Classe = {}
+Classe.__index = Classe
+
+<span class="kw">function</span> Classe.new(...)
+	<span class="kw">return</span> setmetatable({ <span class="cmt">--[[ dati iniziali ]]</span> }, Classe)
+<span class="kw">end</span>
+
+<span class="kw">function</span> Classe:Metodo() <span class="cmt">--[[ ... ]]</span> <span class="kw">end</span></pre>
+    </div>
+  </div>
+
+  <footer>
+    Guida di riferimento alle Metatable — Luau (Roblox)
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,4 @@
+https://centau.github.io/vide/tut/crash-course/13-strict-mode.html
+
+
+https://centau.github.io/vide/api/strict-mode.html
