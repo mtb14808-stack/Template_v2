@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Vide = require(ReplicatedStorage.Packages.Vide)
-local RootMenuUI = require(ReplicatedStorage.SourceCode.Client.App.RootMenuUI)
-local TopBarplus = require(ReplicatedStorage.SourceCode.Client.Hud.TopBarplus)
+local RootMenuUI = require(ReplicatedStorage.SourceCode.Features.App.RootMenuUI)
+local TopBarplus = require(ReplicatedStorage.SourceCode.Features.Hud.TopBarplus)
 
 local Player = game.Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")

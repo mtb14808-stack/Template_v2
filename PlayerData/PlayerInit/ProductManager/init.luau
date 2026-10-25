@@ -5,7 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local NetworkSecurity = require(ServerScriptService.SourceCode.ServerUtilities.NetworkSecurity)
+local NetworkSecurity = require(ServerScriptService.SourceCode.Core.ServerUtilities.NetworkSecurity)
 local networker = require(ReplicatedStorage.Packages.networker)
 local Data = require(ReplicatedStorage.SourceCode.Core.Configs.Data.Data)
 local ProductFunctions = require(script.ProductInfo)

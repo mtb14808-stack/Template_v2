@@ -5,7 +5,7 @@ local MarkePlaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local networker = require(ReplicatedStorage.Packages.networker)
-local NetworkSecurity = require(ServerScriptService.SourceCode.ServerUtilities.NetworkSecurity)
+local NetworkSecurity = require(ServerScriptService.SourceCode.Core.ServerUtilities.NetworkSecurity)
 local Data = require(ReplicatedStorage.SourceCode.Core.Configs.Data.Data)
 local GamePassInfo = require(script.PassesInfo)
 

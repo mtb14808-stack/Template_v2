@@ -1,0 +1,241 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { test } = require("node:test");
+const { spawn, spawnSync } = require("node:child_process");
+const net = require("node:net");
+const { describeFile, generateProject, writeProject, watchProject, resolveRojo } = require("./genRojoTree");
+
+function fixture(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "template-rojo-test-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const template = {
+    name: "Fixture",
+    tree: {
+      $className: "DataModel",
+      ReplicatedStorage: { SourceCode: { $className: "Folder" }, Packages: { $path: "Packages" } },
+      ServerScriptService: {
+        SourceCode: { $className: "Folder" },
+        PlayerData: { $path: "PlayerData" },
+        ServerPackages: { $path: "ServerPackages" },
+      },
+      Workspace: { $properties: { Gravity: 100 } },
+    },
+  };
+  fs.mkdirSync(path.join(root, "src/SourceCode"), { recursive: true });
+  fs.writeFileSync(path.join(root, "rojo.project.template.json"), JSON.stringify(template));
+  function put(filename, content = "return {}") {
+    const target = path.join(root, filename);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, content);
+  }
+  return { root, put, template };
+}
+
+test("separa server e client mantenendo tutta la gerarchia", (t) => {
+  const { root, put, template } = fixture(t);
+  put("src/SourceCode/Features/Tutorial/UI/TutorialClient.luau");
+  put("src/SourceCode/Features/Tutorial/UI/TutorialServer.luau");
+  put("src/SourceCode/Core/Utilities/Nested/TestServer.luau");
+  put("src/SourceCode/Core/Utilities/Observers.luau");
+  put("src/SourceCode/Core/ServerUtilities/NetworkSecurity.luau");
+  const tree = generateProject(root).tree;
+  const shared = tree.ReplicatedStorage.SourceCode;
+  const server = tree.ServerScriptService.SourceCode;
+  assert.equal(shared.Features.Tutorial.UI.TutorialClient.$path, "src/SourceCode/Features/Tutorial/UI/TutorialClient.luau");
+  assert.equal(shared.Features.Tutorial.UI.TutorialServer, undefined);
+  assert.equal(server.Features.Tutorial.UI.TutorialServer.$path, "src/SourceCode/Features/Tutorial/UI/TutorialServer.luau");
+  assert.equal(server.Core.ServerUtilities.Nested.TestServer.$path, "src/SourceCode/Core/Utilities/Nested/TestServer.luau");
+  assert.equal(shared.Core.Utilities.Observers.$path, "src/SourceCode/Core/Utilities/Observers.luau");
+  assert.equal(shared.Core.ServerUtilities, undefined);
+  assert.equal(server.Core.ServerUtilities.NetworkSecurity.$path, "src/SourceCode/Core/ServerUtilities/NetworkSecurity.luau");
+  assert.deepEqual(tree.ServerScriptService.PlayerData, template.tree.ServerScriptService.PlayerData);
+  assert.deepEqual(tree.ServerScriptService.ServerPackages, template.tree.ServerScriptService.ServerPackages);
+  assert.deepEqual(tree.Workspace, template.tree.Workspace);
+});
+
+test("preserva init e separa i figli server", (t) => {
+  const { root, put } = fixture(t);
+  put("src/SourceCode/Features/Shop/init.luau");
+  put("src/SourceCode/Features/Shop/Button.luau");
+  put("src/SourceCode/Features/Shop/ShopServer.luau");
+  put("src/SourceCode/Features/Private/init.server.luau");
+  put("src/SourceCode/Features/Private/Config.luau");
+  const tree = generateProject(root).tree;
+  const shared = tree.ReplicatedStorage.SourceCode.Features;
+  const server = tree.ServerScriptService.SourceCode.Features;
+  assert.equal(shared.Shop.$path, "src/SourceCode/Features/Shop");
+  assert.equal(shared.Shop.$className, undefined);
+  assert.equal(shared.Shop.Button.$path, "src/SourceCode/Features/Shop/Button.luau");
+  assert.equal(shared.Shop.ShopServer, undefined);
+  assert.equal(server.Shop.ShopServer.$path, "src/SourceCode/Features/Shop/ShopServer.luau");
+  assert.equal(shared.Private, undefined);
+  assert.equal(server.Private.$path, "src/SourceCode/Features/Private");
+  assert.equal(server.Private.Config.$path, "src/SourceCode/Features/Private/Config.luau");
+});
+
+test("Rojo reale: init misti, server privati e utility senza duplicati o fughe nel client", (t) => {
+  const rojo = resolveRojo(path.resolve(__dirname, ".."));
+  const available = spawnSync(rojo, ["--version"], { encoding: "utf8", windowsHide: true });
+  if (available.status !== 0) return t.skip("Rojo non disponibile");
+  const { root, put } = fixture(t);
+  for (const directory of ["Packages", "PlayerData", "ServerPackages"]) fs.mkdirSync(path.join(root, directory));
+  put("src/SourceCode/Features/Shop/init.luau");
+  put("src/SourceCode/Features/Shop/Button.luau");
+  put("src/SourceCode/Features/Shop/ShopServer.luau");
+  put("src/SourceCode/Features/Shop/Nested/NestedServer.luau");
+  put("src/SourceCode/Features/Shop/Nested/NestedClient.luau");
+  put("src/SourceCode/Features/Shop/Private/init.server.luau", "print('private')");
+  put("src/SourceCode/Features/Shop/Private/Config.luau");
+  put("src/SourceCode/Core/Utilities/init.luau");
+  put("src/SourceCode/Core/Utilities/Nested/TestServer.luau");
+  put("src/SourceCode/Core/Utilities/Shared.luau");
+  writeProject(root);
+  const result = spawnSync(rojo, ["sourcemap", "default.project.json", "--output", "map.json"], { cwd: root, encoding: "utf8", windowsHide: true });
+  assert.equal(result.status, 0, result.stderr);
+  const map = JSON.parse(fs.readFileSync(path.join(root, "map.json"), "utf8"));
+  function get(...parts) {
+    return parts.reduce((node, name) => node?.children?.find((child) => child.name === name), map);
+  }
+  const shared = get("ReplicatedStorage", "SourceCode", "Features", "Shop");
+  assert.equal(shared.className, "ModuleScript");
+  assert.equal(shared.children.filter((child) => child.name === "Button").length, 1);
+  assert.equal(get("ReplicatedStorage", "SourceCode", "Features", "Shop", "ShopServer"), undefined);
+  assert.equal(get("ReplicatedStorage", "SourceCode", "Features", "Shop", "Nested", "NestedServer"), undefined);
+  assert.equal(get("ReplicatedStorage", "SourceCode", "Features", "Shop", "Private"), undefined);
+  assert.equal(get("ReplicatedStorage", "SourceCode", "Core", "Utilities", "Nested", "TestServer"), undefined);
+  assert.equal(get("ServerScriptService", "SourceCode", "Features", "Shop", "ShopServer").className, "ModuleScript");
+  assert.equal(get("ServerScriptService", "SourceCode", "Features", "Shop", "Private").className, "Script");
+  assert.equal(get("ServerScriptService", "SourceCode", "Features", "Shop", "Private", "Config").className, "ModuleScript");
+  assert.equal(get("ServerScriptService", "SourceCode", "Core", "ServerUtilities", "Nested", "TestServer").className, "ModuleScript");
+  const built = spawnSync(rojo, ["build", "--output", "fixture.rbxlx"], { cwd: root, encoding: "utf8", windowsHide: true });
+  assert.equal(built.status, 0, built.stderr);
+});
+
+test("gestisce estensioni, metadata e nomi senza confondere Observers con Server", (t) => {
+  const { root, put } = fixture(t);
+  assert.equal(describeFile("Observers.luau").server, false);
+  assert.equal(describeFile("ServerCache.luau").server, true);
+  assert.equal(describeFile("Api.server.lua").server, true);
+  assert.equal(describeFile("inventoryserver.luau").server, true);
+  assert.equal(describeFile("Root.story.luau").name, "Root.story");
+  assert.throws(() => describeFile("ShopServer.client.luau"), /ambiguo/);
+  put("src/SourceCode/Features/Shop/Settings.json", '{"Price":10}');
+  put("src/SourceCode/Features/Shop/Settings.meta.json", '{}');
+  put("src/SourceCode/Features/Shop/init.meta.json", '{"properties":{"Archivable":false}}');
+  const shop = generateProject(root).tree.ReplicatedStorage.SourceCode.Features.Shop;
+  assert.deepEqual(shop.$properties, { Archivable: false });
+  assert.equal(shop.Settings.$path, "src/SourceCode/Features/Shop/Settings.json");
+  assert.equal(shop["Settings.meta"], undefined);
+});
+
+test("rifiuta collisioni e init duplicati senza corrompere il JSON precedente", (t) => {
+  const { root, put } = fixture(t);
+  put("src/SourceCode/Features/Shop/Item.luau");
+  assert.equal(writeProject(root), true);
+  assert.equal(writeProject(root), false);
+  const output = path.join(root, "default.project.json");
+  const previous = fs.readFileSync(output, "utf8");
+  put("src/SourceCode/Features/Shop/Item.lua");
+  assert.throws(() => writeProject(root), /Collisione/);
+  assert.equal(fs.readFileSync(output, "utf8"), previous);
+  fs.unlinkSync(path.join(root, "src/SourceCode/Features/Shop/Item.lua"));
+  put("src/SourceCode/Features/Shop/init.luau");
+  put("src/SourceCode/Features/Shop/init.server.luau");
+  assert.throws(() => generateProject(root), /Più file init/);
+});
+
+async function waitFor(predicate) {
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    try { if (await predicate()) return; } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  assert.fail("Il watcher non ha aggiornato il mapping in tempo");
+}
+
+test("watch: creazione, modifica, rinomina, eliminazione e template", async (t) => {
+  const { root, put, template } = fixture(t);
+  const errors = [];
+  writeProject(root);
+  const close = watchProject(root, () => {}, (error) => errors.push(error));
+  t.after(close);
+  const output = path.join(root, "default.project.json");
+  const read = () => JSON.parse(fs.readFileSync(output, "utf8"));
+  put("src/SourceCode/Features/New/Nested/TestServer.luau");
+  await waitFor(() => read().tree.ServerScriptService.SourceCode.Features.New.Nested.TestServer);
+  fs.renameSync(path.join(root, "src/SourceCode/Features/New/Nested/TestServer.luau"), path.join(root, "src/SourceCode/Features/New/Nested/TestClient.luau"));
+  await waitFor(() => read().tree.ReplicatedStorage.SourceCode.Features.New.Nested.TestClient);
+  assert.equal(read().tree.ServerScriptService.SourceCode.Features, undefined);
+  const saved = fs.readFileSync(output, "utf8");
+  put("src/SourceCode/Features/New/Nested/TestClient.luau", "return {Changed=true}");
+  await new Promise((resolve) => setTimeout(resolve, 350));
+  assert.equal(fs.readFileSync(output, "utf8"), saved);
+  fs.unlinkSync(path.join(root, "src/SourceCode/Features/New/Nested/TestClient.luau"));
+  await waitFor(() => !read().tree.ReplicatedStorage.SourceCode.Features);
+  template.name = "Changed";
+  put("rojo.project.template.json", JSON.stringify(template));
+  await waitFor(() => read().name === "Changed");
+  put("rojo.project.template.json", "{");
+  await waitFor(() => errors.length === 1);
+  assert.equal(read().name, "Changed");
+  put("rojo.project.template.json", JSON.stringify(template));
+  put("src/SourceCode/Features/Recovered/RecoveredServer.luau");
+  await waitFor(() => read().tree.ServerScriptService.SourceCode.Features.Recovered.RecoveredServer);
+});
+
+test("Rojo live riceve creazioni, rinomine, eliminazioni e modifiche senza riavvio", async (t) => {
+  const rojo = resolveRojo(path.resolve(__dirname, ".."));
+  if (spawnSync(rojo, ["--version"], { encoding: "utf8", windowsHide: true }).status !== 0) return t.skip("Rojo non disponibile");
+  const { root, put } = fixture(t);
+  for (const directory of ["Packages", "PlayerData", "ServerPackages"]) fs.mkdirSync(path.join(root, directory));
+  put("src/SourceCode/Features/Test/RootClient.luau");
+  writeProject(root);
+  const port = await new Promise((resolve, reject) => {
+    const listener = net.createServer();
+    listener.on("error", reject);
+    listener.listen(0, "127.0.0.1", () => {
+      const chosen = listener.address().port;
+      listener.close(() => resolve(chosen));
+    });
+  });
+  const child = spawn(rojo, ["serve", "--port", String(port)], { cwd: root, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+  let launchError;
+  child.on("error", (error) => { launchError = error; });
+  child.stdout.resume();
+  child.stderr.resume();
+  const close = watchProject(root, () => {}, () => {});
+  async function snapshot() {
+    if (launchError) throw launchError;
+    const base = `http://localhost:${port}`;
+    const info = await fetch(`${base}/api/rojo`, { signal: AbortSignal.timeout(750) });
+    const content = await info.text();
+    const rootId = info.headers.get("content-type")?.includes("json")
+      ? JSON.parse(content).rootInstanceId : content.match(/[a-f0-9]{32}/)?.[0];
+    assert.ok(rootId);
+    const response = await fetch(`${base}/api/read/${rootId}`, { signal: AbortSignal.timeout(750) });
+    return Buffer.from(await response.arrayBuffer());
+  }
+  try {
+    await waitFor(async () => (await snapshot()).includes(Buffer.from("RootClient")));
+    put("src/SourceCode/Features/Test/LiveServer.luau");
+    await waitFor(async () => (await snapshot()).includes(Buffer.from("LiveServer")));
+    fs.renameSync(path.join(root, "src/SourceCode/Features/Test/LiveServer.luau"), path.join(root, "src/SourceCode/Features/Test/LiveClient.luau"));
+    await waitFor(async () => {
+      const tree = await snapshot();
+      return tree.includes(Buffer.from("LiveClient")) && !tree.includes(Buffer.from("LiveServer"));
+    });
+    fs.unlinkSync(path.join(root, "src/SourceCode/Features/Test/LiveClient.luau"));
+    await waitFor(async () => !(await snapshot()).includes(Buffer.from("LiveClient")));
+    put("src/SourceCode/Features/Test/RootClient.luau", 'return {Value="LiveContentChanged"}');
+    await waitFor(async () => (await snapshot()).includes(Buffer.from("LiveContentChanged")));
+  } finally {
+    close();
+    if (child.exitCode === null && !launchError) {
+      const exited = new Promise((resolve) => child.once("exit", resolve));
+      child.kill();
+      await exited;
+    }
+  }
+});

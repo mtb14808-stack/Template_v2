@@ -1,6 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Vide = require(ReplicatedStorage.Packages.Vide)
-local TutorialSource = require(ReplicatedStorage.SourceCode.Client.Tutorial.UI.Sources.TutorialSource)
+local TutorialSource = require(ReplicatedStorage.SourceCode.Features.Tutorial.UI.Sources.TutorialSource)
 local AdminNotificationComponent = require(script.AdminNotificationComponent)
 local Notification = require(script.Parent.Notification)
 

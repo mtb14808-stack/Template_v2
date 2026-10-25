@@ -2,14 +2,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local LeaderboardServer = require(ServerScriptService.SourceCode.Server.Leaderboard.LeaderboardServer)
+local LeaderboardServer = require(ServerScriptService.SourceCode.Features.Leaderboard.LeaderboardServer)
 local networker = require(ReplicatedStorage.Packages.networker)
 local DataManager = require(script.DataManager)
 local GamePassManager = require(script.GamePassManager)
 local Data = require(ReplicatedStorage.SourceCode.Core.Configs.Data.Data)
 local DataTemplate = require(ReplicatedStorage.SourceCode.Core.Configs.Data.DataTemplate)
-local TutorialServer = require(ServerScriptService.SourceCode.Server.Tutorial.TutorialServer)
-local NetworkSecurity = require(ServerScriptService.SourceCode.ServerUtilities.NetworkSecurity)
+local TutorialServer = require(ServerScriptService.SourceCode.Features.Tutorial.TutorialServer)
+local NetworkSecurity = require(ServerScriptService.SourceCode.Core.ServerUtilities.NetworkSecurity)
 
 local PlayerData = {}
 local ActiveObservers = {}

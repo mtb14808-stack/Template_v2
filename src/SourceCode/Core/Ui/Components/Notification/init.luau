@@ -2,7 +2,7 @@ local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local NotificationComponent = require(script.NotificationComponent)
 local Vide = require(ReplicatedStorage.Packages.Vide)
-local TutorialSource = require(ReplicatedStorage.SourceCode.Client.Tutorial.UI.Sources.TutorialSource)
+local TutorialSource = require(ReplicatedStorage.SourceCode.Features.Tutorial.UI.Sources.TutorialSource)
 
 export type NotificationInput = {
 	Text: string,

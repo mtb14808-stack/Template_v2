@@ -9,3 +9,9 @@
 
 sourcemap.json
 wally.lock
+
+.rojo-mapping*.log
+.rojo-mapping.pid
+.rojo-server*.log
+.rojo-server.pid
+default.project.json.*.tmp

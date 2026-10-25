@@ -2,7 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local networker = require(ReplicatedStorage.Packages.networker)
 local Animation = require(ReplicatedStorage.SourceCode.Core.Utilities.Animation)
 
-local TargetFolder = ReplicatedStorage:WaitForChild("SourceCode"):WaitForChild("Client")
+local TargetFolder = ReplicatedStorage:WaitForChild("SourceCode"):WaitForChild("Features")
 
 local ClientInit = {}
 

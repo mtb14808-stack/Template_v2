@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Rojo: mapping automatico",
+      "type": "process",
+      "command": "node",
+      "args": ["tools/genRojoTree.js", "--watch"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "rojo-mapping",
+        "pattern": { "regexp": "^(.*):(\\d+):(.*)$", "file": 1, "line": 2, "message": 3 },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "\\[Mapping\\]",
+          "endsPattern": "In ascolto"
+        }
+      },
+      "runOptions": { "runOn": "folderOpen", "instanceLimit": 1 },
+      "presentation": { "reveal": "silent", "panel": "dedicated" }
+    },
+    {
+      "label": "Rojo: mapping e server",
+      "type": "process",
+      "command": "node",
+      "args": ["tools/genRojoTree.js", "--watch", "--serve"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" }
+    }
+  ]
+}

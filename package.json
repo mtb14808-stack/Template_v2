@@ -1,0 +1,13 @@
+{
+  "name": "roblox-template",
+  "private": true,
+  "scripts": {
+    "build:rojo": "node tools/genRojoTree.js",
+    "watch:rojo": "node tools/genRojoTree.js --watch",
+    "dev": "node tools/genRojoTree.js --watch --serve",
+    "test": "node --test tools/genRojoTree.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
