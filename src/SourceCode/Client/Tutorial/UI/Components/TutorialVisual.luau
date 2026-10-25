@@ -13,6 +13,8 @@ local Spring = require(ReplicatedStorage.SourceCode.Core.Ui.Utils.Spring)
 local RotationTarget = 30
 local BASE_SCALE = 1.5
 local TEXT_SIZE = 42
+local LightBulbRawSize = PngIds.LightBulb.Size or UDim2.fromOffset(299, 436)
+local LightBulbSize = UDim2.fromOffset(LightBulbRawSize.X.Offset / 6, LightBulbRawSize.Y.Offset / 6.5)
 
 return function()
 	return Vide.show(TutorialSource.MountSource, function()
@@ -102,14 +104,14 @@ return function()
 					}),
 
 					Frame({
-						Size = UDim2.fromOffset(299 / 6, 436 / 6.5),
+						Size = LightBulbSize,
 						Name = "LighBulbContainer",
 						BackgroundTransparency = 1,
 						ImageLabel({
 							Name = "LightBulb",
 							LayoutOrder = 1,
-							Image = PngIds.LightBulb,
-							Size = UDim2.fromOffset(299 / 6, 436 / 6.5),
+							Image = PngIds.LightBulb.Image,
+							Size = UDim2.fromScale(1, 1),
 							AnchorPoint = Vector2.new(0.5, 0.5),
 							Position = UDim2.fromScale(0.5, 0.5),
 							Rotation = function()
@@ -146,7 +148,7 @@ return function()
 						ImageLabel({
 							ZIndex = -1111,
 							Name = "DropShadow",
-							Image = PngIds.TextDropShadow,
+							Image = PngIds.TextDropShadow.Image,
 							Size = UDim2.new(1.5, 40, 1.8, 20),
 							Position = UDim2.fromScale(0.5, 0.55),
 							AnchorPoint = Vector2.new(0.5, 0.5),

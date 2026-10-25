@@ -2,6 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TutorialSteps = require(script.Parent.TutorialSteps)
 local networker = require(ReplicatedStorage.Packages.networker)
 local TutorialSource = require(ReplicatedStorage.SourceCode.Client.Tutorial.UI.Sources.TutorialSource)
+local Data = require(ReplicatedStorage.SourceCode.Core.Configs.Data.Data)
 local Indicator = require(ReplicatedStorage.SourceCode.Core.Ui.Components.Indicator)
 local TutorailEvents = "TutorailEvents"
 

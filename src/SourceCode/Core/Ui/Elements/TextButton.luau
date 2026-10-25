@@ -1,10 +1,16 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Vide = require(ReplicatedStorage.Packages.Vide)
+local TextPrefix = require(script.Parent.TextPrefix)
+local TextLabel = require(script.Parent.TextLabel)
+local TextSizing = require(script.Parent.Parent.Utils.TextSizing)
 
 local create = Vide.create
 
 export type Props = {
+	Prefix: TextPrefix.Prefix?,
+	PrefixMult: (number | () -> number)?,
+	PrefixPadding: (number | () -> number)?,
 	Text: (string | () -> string)?,
 	TextColor3: (Color3 | () -> Color3)?,
 	TextSize: (number | () -> number)?,
@@ -14,6 +20,7 @@ export type Props = {
 	TextTransparency: (number | () -> number)?,
 	TextStrokeColor3: (Color3 | () -> Color3)?,
 	TextStrokeTransparency: (number | () -> number)?,
+	Thickness: number?,
 	TextDirection: (Enum.TextDirection | () -> Enum.TextDirection)?,
 	TextTruncate: (Enum.TextTruncate | () -> Enum.TextTruncate)?,
 	TextWrapped: (boolean | () -> boolean)?,
@@ -54,6 +61,9 @@ export type Props = {
 }
 
 return function(props: Props)
+	if props.Prefix ~= nil then
+		return TextPrefix(props, true, TextLabel)
+	end
 	local useShadow = if typeof(props.UseShadow) == "function"
 		then props.UseShadow()
 		else (if props.UseShadow ~= nil then props.UseShadow else true)
@@ -66,6 +76,12 @@ return function(props: Props)
 
 	local frameChildren: { [any]: any } = {}
 	local strokes: { UIStroke } = {}
+
+	if typeof(props.Thickness) == "number" then
+		table.insert(strokes, create("UIStroke")({
+			Thickness = props.Thickness,
+		}))
+	end
 
 	local function processChild(child: any)
 		if typeof(child) == "Instance" and child:IsA("UIStroke") then
@@ -112,7 +128,7 @@ return function(props: Props)
 		if type(off) == "function" then
 			off = off()
 		end
-		local offset: UDim2 = (off :: UDim2) or UDim2.fromOffset(3, 4)
+		local offset: UDim2 = (off :: UDim2) or UDim2.fromOffset(0, 4)
 		return UDim2.new(0.5 + offset.X.Scale, offset.X.Offset, 0.5 + offset.Y.Scale, offset.Y.Offset)
 	end
 
@@ -128,7 +144,8 @@ return function(props: Props)
 			Text = props.Text,
 			TextColor3 = props.ShadowColor3 or Color3.new(0, 0, 0),
 			TextSize = props.TextSize,
-			TextScaled = if props.TextScaled ~= nil then props.TextScaled else true,
+			TextScaled = false,
+			TextSizing.Apply(props),
 			Font = props.Font or Enum.Font.BuilderSansExtraBold,
 			FontFace = props.FontFace,
 			TextTransparency = props.TextTransparency,
@@ -165,7 +182,8 @@ return function(props: Props)
 			Text = props.Text,
 			TextColor3 = props.TextColor3 or Color3.new(1, 1, 1),
 			TextSize = props.TextSize,
-			TextScaled = if props.TextScaled ~= nil then props.TextScaled else true,
+			TextScaled = false,
+			TextSizing.Apply(props),
 			Font = props.Font or Enum.Font.BuilderSansExtraBold,
 			FontFace = props.FontFace,
 			TextTransparency = props.TextTransparency,
@@ -221,7 +239,8 @@ return function(props: Props)
 		Text = props.Text,
 		TextColor3 = props.TextColor3 or Color3.new(1, 1, 1),
 		TextSize = props.TextSize,
-		TextScaled = if props.TextScaled ~= nil then props.TextScaled else true,
+		TextScaled = false,
+		TextSizing.Apply(props),
 		Font = props.Font or Enum.Font.BuilderSansExtraBold,
 		FontFace = props.FontFace,
 		TextTransparency = props.TextTransparency,

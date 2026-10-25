@@ -14,7 +14,8 @@ export type Args = {
 
 local BounceDuration = 0.25
 local BounceDistance = 35
-local IndicatorSize = UDim2.fromOffset(83 * 1.5, 99 * 1.5)
+local IndicatorRawSize = PngIds.Indicator.Size or UDim2.fromOffset(83, 99)
+local IndicatorSize = UDim2.fromOffset(IndicatorRawSize.X.Offset * 1.5, IndicatorRawSize.Y.Offset * 1.5)
 local Margin = 20
 
 local function GetRotation(direction: string): number
@@ -117,7 +118,7 @@ return function(Args: Args)
 			Size = IndicatorSize,
 			ImageLabel({
 				Name = "Indicator",
-				Image = PngIds.Indicator,
+				Image = PngIds.Indicator.Image,
 				Size = UDim2.fromScale(1, 1),
 			}),
 		})
