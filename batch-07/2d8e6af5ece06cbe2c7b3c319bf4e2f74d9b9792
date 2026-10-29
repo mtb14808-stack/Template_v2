@@ -1,0 +1,37 @@
+## Regole del progetto Da leggere e sapere sempre prima di eseguire una task
+
+- Non aggiungere mai commenti nel codice.
+- Per UI, icone e thumbnail, preferire forme semplici, composizioni leggibili anche in piccolo e uno stile coerente con Roblox. Evitare iperrealismo, dettagli ultra HD superflui, effetti eccessivi e l'aspetto generico delle immagini generate dall'AI. Cercare una direzione artistica intenzionale, con proporzioni, materiali, colori e rifiniture coerenti, come in un lavoro curato da un artista umano; non promettere che l'origine AI sia impossibile da riconoscere.
+- Prima di progettare UI, icone o thumbnail, consultare i riferimenti pertinenti in `C:/Users/foadf/Desktop/Desing_Reference`, usando `Thumbnails/index.json` per selezionare le immagini e aprendole prima di trarne conclusioni visive. Prendere ispirazione dai principi grafici e dallo stile generale dei giochi Roblox affermati, senza copiarne asset, loghi o composizioni. Le thumbnail sono riferimenti promozionali: per progettare un'interfaccia cercare anche riferimenti dell'UI effettiva. Puntare a chiarezza e attrattiva senza garantire popolarita o risultati commerciali.
+- La fedelta alle reference deve riguardare concretamente personaggi, facce, proporzioni, terreno, stud, vegetazione, materiali e illuminazione; non basta descrivere lo stile come Roblox o low-poly. Usare reference visive compatibili come input quando lo strumento lo permette. Evitare avatar noob e sorrisi standard ripetuti scelti automaticamente; scegliere l'avatar in base alla direzione artistica, con facce da decal Roblox coerenti con i riferimenti, senza lineamenti umani o dettagli 3D inventati. Non aggiungere alberi, nuvole cubiche o altri elementi generici assenti dai riferimenti scelti.
+- Usare i test necessari per verificare le modifiche. Al termine eliminare i file di test e gli artefatti temporanei che non servono alla funzionalità richiesta; conservare soltanto quelli necessari al lavoro richiesto o esplicitamente richiesti dall'utente.
+- Ogni modifica deve essere corretta e performante, senza introdurre memory leak o problemi di prestazioni. Verificare i casi rilevanti senza dichiarare garanzie non misurate.
+- Ripulire sempre connessioni, timer, istanze e riferimenti quando non servono più, anche all'uscita del giocatore e alla distruzione del personaggio. Evitare inizializzazioni duplicate, lavoro continuo non necessario e risorse create prima che servano.
+- Nei moduli che espongono source Vide, dichiarare le source prima della tabella esportata, ciascuna in una variabile locale con suffisso `Source`. Raggruppare le source correlate, separando i gruppi con una riga vuota, e mettere la tabella `return { ... }` alla fine del modulo. Seguire questa struttura:
+
+```luau
+local MountSource = Vide.source(false)
+local ActiveSource = Vide.source(false)
+
+local TextSource = Vide.source("")
+local TextColorSource = Vide.source(Color3.new(1, 1, 1))
+
+return {
+	Mount = MountSource,
+	Active = ActiveSource,
+	Text = TextSource,
+	TextColor = TextColorSource,
+}
+```
+
+- Definire le funzioni esportate direttamente nella tabella finale con `Nome = function(...) ... end`. Non dichiarare prima una funzione locale soltanto per esportarla con `Nome = Nome`. Le funzioni interne non esportate possono restare locali. Esempio:
+
+```luau
+return {
+	Mount = MountSource,
+	Active = ActiveSource,
+	SetText = function(text: string)
+		TextSource(text)
+	end,
+}
+```

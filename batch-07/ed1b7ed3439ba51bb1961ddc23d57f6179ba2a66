@@ -1,0 +1,35 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local Data = require(ReplicatedStorage.SourceCode.Core.Configs.Data.Data)
+local DataTemplate = require(ReplicatedStorage.SourceCode.Core.Configs.Data.DataTemplate)
+
+export type DataName = keyof<DataTemplate.Template>
+export type DataValue<K> = index<DataTemplate.Template, K>
+export type DataSource<T> = Vide.Source<T>
+export type GetDataSource = (<K>(SourceName: K & DataName, MockValue: DataValue<K>?) -> DataSource<DataValue<K>>)
+	& (<T>(SourceName: string, MockValue: T) -> DataSource<T>)
+
+local function GetDataSource<T>(SourceName: string, MockValue: T?): DataSource<T>
+	local initialValue = if MockValue ~= nil then MockValue else Data.client[SourceName]()
+	local ValueSource = Vide.source(initialValue)
+
+	if MockValue == nil then
+		local disconnect = Data.client[SourceName].Changed(function(newValue: any): ()
+			ValueSource(newValue)
+		end)
+
+		Vide.cleanup(function(): ()
+			if typeof(disconnect) == "function" then
+				disconnect()
+			elseif typeof(disconnect) == "table" and typeof(disconnect.Disconnect) == "function" then
+				disconnect:Disconnect()
+			elseif typeof(disconnect) == "RBXScriptConnection" then
+				disconnect:Disconnect()
+			end
+		end)
+	end
+
+	return ValueSource :: DataSource<T>
+end
+
+return (GetDataSource :: any) :: GetDataSource

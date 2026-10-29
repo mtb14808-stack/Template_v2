@@ -1,0 +1,7 @@
+return {
+	AdminNotification = { id = "rbxassetid://17208361335", Volume = 0.3, Pitch = 1, TimeLenght = 1.55 },
+	Confetti1 = { id = "rbxassetid://109081723292068", Volume = 0.05, Pitch = 1, TimeLenght = 4.2, Looped = false },
+	Confetti2 = { id = "rbxassetid://90545833604265", Volume = 0.3, Pitch = 1, TimeLenght = 4.1, Looped = false },
+	FireWorkExplosion = { id = "rbxassetid://4583102108", Volume = 8, Pitch = 1, TimeLenght = 10, Looped = false },
+	FireWorkLunch = { id = "rbxassetid://551051176", Volume = 0.8, Pitch = 1, TimeLenght = 10, Looped = false },
+}

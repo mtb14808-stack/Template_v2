@@ -1,0 +1,886 @@
+{
+  "name": "Template",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "SourceCode": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": false,
+        "ClientInit": {
+          "$ignoreUnknownInstances": false,
+          "$path": {
+            "optional": "src/SourceCode/ClientInit.luau"
+          }
+        },
+        "Core": {
+          "$className": "Folder",
+          "$ignoreUnknownInstances": false,
+          "Configs": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "AnimationsData": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Configs/AnimationsData.luau"
+              }
+            },
+            "AssetsId": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "PngIds": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Configs/AssetsId/PngIds.luau"
+                }
+              },
+              "SoundIds": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Configs/AssetsId/SoundIds.luau"
+                }
+              }
+            },
+            "Data": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "Data": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Configs/Data/Data.luau"
+                }
+              },
+              "DataTemplate": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Configs/Data/DataTemplate.luau"
+                }
+              }
+            },
+            "Game": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false
+            },
+            "Monetization": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "GamePasses": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Configs/Monetization/GamePasses.luau"
+                }
+              },
+              "Products": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Configs/Monetization/Products.luau"
+                }
+              }
+            }
+          },
+          "Math": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "Bezier": {
+              "$ignoreUnknownInstances": false,
+              "Visualize": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Math/Bezier/Visualize.luau"
+                }
+              },
+              "$path": {
+                "optional": "src/SourceCode/Core/Math/Bezier"
+              }
+            },
+            "Lerp": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Math/Lerp.luau"
+              }
+            },
+            "MathMisc": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Math/MathMisc.luau"
+              }
+            }
+          },
+          "Ui": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "Components": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "AdminNotification": {
+                "$ignoreUnknownInstances": false,
+                "AdminNotificationComponent": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Core/Ui/Components/AdminNotification/AdminNotificationComponent.luau"
+                  }
+                },
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Components/AdminNotification"
+                }
+              },
+              "Camera": {
+                "$ignoreUnknownInstances": false,
+                "CameraComponent": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Core/Ui/Components/Camera/CameraComponent.luau"
+                  }
+                },
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Components/Camera"
+                }
+              },
+              "Confetti": {
+                "$ignoreUnknownInstances": false,
+                "ConfettiComponent": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Core/Ui/Components/Confetti/ConfettiComponent.luau"
+                  }
+                },
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Components/Confetti"
+                }
+              },
+              "Indicator": {
+                "$ignoreUnknownInstances": false,
+                "IndicatorComponent": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Core/Ui/Components/Indicator/IndicatorComponent.luau"
+                  }
+                },
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Components/Indicator"
+                }
+              },
+              "Notification": {
+                "$ignoreUnknownInstances": false,
+                "NotificationComponent": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Core/Ui/Components/Notification/NotificationComponent.luau"
+                  }
+                },
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Components/Notification"
+                }
+              },
+              "Vignette": {
+                "$ignoreUnknownInstances": false,
+                "VignetteComponent": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Core/Ui/Components/Vignette/VignetteComponent.luau"
+                  }
+                },
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Components/Vignette"
+                }
+              }
+            },
+            "Elements": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "CanvasGroup": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/CanvasGroup.luau"
+                }
+              },
+              "Frame": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/Frame.luau"
+                }
+              },
+              "ImageButton": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/ImageButton.luau"
+                }
+              },
+              "ImageLabel": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/ImageLabel.luau"
+                }
+              },
+              "ScaledFrame": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/ScaledFrame.luau"
+                }
+              },
+              "ScrollingFrame": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/ScrollingFrame.luau"
+                }
+              },
+              "SlideFrame": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/SlideFrame.luau"
+                }
+              },
+              "TextButton": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/TextButton.luau"
+                }
+              },
+              "TextLabel": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/TextLabel.luau"
+                }
+              },
+              "TextPrefix": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/TextPrefix.luau"
+                }
+              },
+              "UICorner": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UICorner.luau"
+                }
+              },
+              "UIGradient": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UIGradient.luau"
+                }
+              },
+              "UIGridLayout": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UIGridLayout.luau"
+                }
+              },
+              "UIListLayout": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UIListLayout.luau"
+                }
+              },
+              "UIPadding": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UIPadding.luau"
+                }
+              },
+              "UIScale": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UIScale.luau"
+                }
+              },
+              "UIStroke": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/UIStroke.luau"
+                }
+              },
+              "ViewportFrame": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Elements/ViewportFrame.luau"
+                }
+              }
+            },
+            "Sources": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "GetDataSource": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Sources/GetDataSource.luau"
+                }
+              },
+              "ViewPortSizeSource": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Sources/ViewPortSizeSource.luau"
+                }
+              }
+            },
+            "Utils": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "ApplyHover": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/ApplyHover.luau"
+                }
+              },
+              "FormatNumber": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/FormatNumber.luau"
+                }
+              },
+              "FormatTime": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/FormatTime.luau"
+                }
+              },
+              "Hover": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/Hover.luau"
+                }
+              },
+              "Spring": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/Spring.luau"
+                }
+              },
+              "TextSizing": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/TextSizing.luau"
+                }
+              },
+              "withDebounce": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Core/Ui/Utils/withDebounce.luau"
+                }
+              }
+            }
+          },
+          "Utilities": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "Animation": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Animation.luau"
+              }
+            },
+            "Appearance": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Appearance.luau"
+              }
+            },
+            "Boids": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Boids.luau"
+              }
+            },
+            "FireWork": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/FireWork.luau"
+              }
+            },
+            "Haptic": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Haptic.luau"
+              }
+            },
+            "Morph": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Morph.luau"
+              }
+            },
+            "Number": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Number.luau"
+              }
+            },
+            "Ragdoll": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Ragdoll.luau"
+              }
+            },
+            "RandomUtility": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/RandomUtility.luau"
+              }
+            },
+            "Sound": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Sound.luau"
+              }
+            },
+            "String": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/String.luau"
+              }
+            },
+            "Tween": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Tween.luau"
+              }
+            },
+            "Vfx": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/Vfx.luau"
+              }
+            },
+            "VideChildrenHandler": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/Utilities/VideChildrenHandler.luau"
+              }
+            }
+          }
+        },
+        "Features": {
+          "$className": "Folder",
+          "$ignoreUnknownInstances": false,
+          "Afk": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "AfkClient": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Afk/AfkClient.luau"
+              }
+            }
+          },
+          "App": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "Components": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "CustomButton": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Features/App/Components/CustomButton.luau"
+                }
+              },
+              "Menu": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Features/App/Components/Menu.luau"
+                }
+              },
+              "SubMenu": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Features/App/Components/SubMenu.luau"
+                }
+              }
+            },
+            "MenuLifecycle": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/App/MenuLifecycle.luau"
+              }
+            },
+            "RootMenu": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/App/RootMenu.luau"
+              }
+            },
+            "RootMenu.story": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/App/RootMenu.story.luau"
+              }
+            },
+            "RootMenuUI": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/App/RootMenuUI.luau"
+              }
+            },
+            "Sources": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "MenuState": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Features/App/Sources/MenuState.luau"
+                }
+              }
+            }
+          },
+          "Cmdr": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "CmdrClient": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Cmdr/CmdrClient.luau"
+              }
+            },
+            "CmdrClientFunctions": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Cmdr/CmdrClientFunctions.luau"
+              }
+            }
+          },
+          "Hud": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "HudRoot": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Hud/HudRoot.luau"
+              }
+            },
+            "TopBarplus": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Hud/TopBarplus.luau"
+              }
+            },
+            "UI": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "Components": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "BottomBar": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/Components/BottomBar.luau"
+                  }
+                },
+                "EffectsContainer": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/Components/EffectsContainer.luau"
+                  }
+                },
+                "LeftBar": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/Components/LeftBar.luau"
+                  }
+                },
+                "RightBar": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/Components/RightBar.luau"
+                  }
+                },
+                "TopBar": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/Components/TopBar.luau"
+                  }
+                }
+              },
+              "Sources": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "HudSource": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/Sources/HudSource.luau"
+                  }
+                }
+              },
+              "TopBar": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "FeedBack": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Hud/UI/TopBar/FeedBack.luau"
+                  }
+                }
+              }
+            }
+          },
+          "Leaderboard": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "LeaderboardClient": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Leaderboard/LeaderboardClient.luau"
+              }
+            },
+            "UI": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "Components": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "LeaderboardSlot": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Leaderboard/UI/Components/LeaderboardSlot.luau"
+                  }
+                }
+              },
+              "LeaderboardRoot": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Features/Leaderboard/UI/LeaderboardRoot.luau"
+                }
+              },
+              "Sources": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "LeaderboardSources": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Leaderboard/UI/Sources/LeaderboardSources.luau"
+                  }
+                }
+              }
+            }
+          },
+          "Monetization": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "MonetizationClient": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Monetization/MonetizationClient.luau"
+              }
+            },
+            "MonetizationUtils": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Monetization/MonetizationUtils.luau"
+              }
+            },
+            "UI": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "Components": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false
+              }
+            }
+          },
+          "Tutorial": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "TutorialClient": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Tutorial/TutorialClient.luau"
+              }
+            },
+            "TutorialSteps": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Tutorial/TutorialSteps.luau"
+              }
+            },
+            "UI": {
+              "$className": "Folder",
+              "$ignoreUnknownInstances": false,
+              "Components": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "TutorialVisual": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Tutorial/UI/Components/TutorialVisual.luau"
+                  }
+                }
+              },
+              "Sources": {
+                "$className": "Folder",
+                "$ignoreUnknownInstances": false,
+                "TutorialSource": {
+                  "$ignoreUnknownInstances": false,
+                  "$path": {
+                    "optional": "src/SourceCode/Features/Tutorial/UI/Sources/TutorialSource.luau"
+                  }
+                }
+              },
+              "TutorialRoot": {
+                "$ignoreUnknownInstances": false,
+                "$path": {
+                  "optional": "src/SourceCode/Features/Tutorial/UI/TutorialRoot.luau"
+                }
+              }
+            }
+          }
+        },
+        "MountUI": {
+          "$ignoreUnknownInstances": false,
+          "$path": {
+            "optional": "src/SourceCode/MountUI.luau"
+          }
+        }
+      },
+      "Packages": {
+        "$path": "Packages"
+      }
+    },
+    "ServerScriptService": {
+      "SourceCode": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": false,
+        "Core": {
+          "$className": "Folder",
+          "$ignoreUnknownInstances": false,
+          "ServerUtilities": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "Funnels": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/ServerUtilities/Funnels.luau"
+              }
+            },
+            "HttpsRequests": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/ServerUtilities/HttpsRequests.luau"
+              }
+            },
+            "NetworkSecurity": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/ServerUtilities/NetworkSecurity.luau"
+              }
+            },
+            "PlayersStates": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/ServerUtilities/PlayersStates.luau"
+              }
+            },
+            "RngNumber": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/ServerUtilities/RngNumber.luau"
+              }
+            },
+            "TeleportToPlace": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Core/ServerUtilities/TeleportToPlace.luau"
+              }
+            }
+          }
+        },
+        "Features": {
+          "$className": "Folder",
+          "$ignoreUnknownInstances": false,
+          "Afk": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "AfkServer": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Afk/AfkServer.luau"
+              }
+            }
+          },
+          "Cmdr": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "CmdrExecutorServer": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Cmdr/CmdrExecutorServer.luau"
+              }
+            },
+            "CmdrFunctionsServer": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Cmdr/CmdrFunctionsServer.luau"
+              }
+            },
+            "CmdrInit": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Cmdr/CmdrInit.server.luau"
+              }
+            }
+          },
+          "Leaderboard": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "LeaderboardServer": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Leaderboard/LeaderboardServer.luau"
+              }
+            }
+          },
+          "Tutorial": {
+            "$className": "Folder",
+            "$ignoreUnknownInstances": false,
+            "TutorialServer": {
+              "$ignoreUnknownInstances": false,
+              "$path": {
+                "optional": "src/SourceCode/Features/Tutorial/TutorialServer.luau"
+              }
+            }
+          }
+        },
+        "InitServices": {
+          "$ignoreUnknownInstances": false,
+          "$path": {
+            "optional": "src/SourceCode/InitServices.server.luau"
+          }
+        }
+      },
+      "PlayerData": {
+        "$path": "PlayerData"
+      },
+      "ServerPackages": {
+        "$path": "ServerPackages"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/StarterPlayerScripts"
+        }
+      }
+    },
+    "Workspace": {
+      "RayCastDebug": {
+        "$className": "Folder"
+      }
+    },
+    "Lighting": {},
+    "SoundService": {}
+  },
+  "globIgnorePaths": [
+    "src/SourceCode/Core/Math/Bezier/Visualize.luau",
+    "src/SourceCode/Core/ServerUtilities",
+    "src/SourceCode/Core/Ui/Components/AdminNotification/AdminNotificationComponent.luau",
+    "src/SourceCode/Core/Ui/Components/Camera/CameraComponent.luau",
+    "src/SourceCode/Core/Ui/Components/Confetti/ConfettiComponent.luau",
+    "src/SourceCode/Core/Ui/Components/Indicator/IndicatorComponent.luau",
+    "src/SourceCode/Core/Ui/Components/Notification/NotificationComponent.luau",
+    "src/SourceCode/Core/Ui/Components/Vignette/VignetteComponent.luau",
+    "src/SourceCode/Features/Afk/AfkServer.luau",
+    "src/SourceCode/Features/Cmdr/CmdrExecutorServer.luau",
+    "src/SourceCode/Features/Cmdr/CmdrFunctionsServer.luau",
+    "src/SourceCode/Features/Cmdr/CmdrInit.server.luau",
+    "src/SourceCode/Features/Leaderboard/LeaderboardServer.luau",
+    "src/SourceCode/Features/Tutorial/TutorialServer.luau",
+    "src/SourceCode/InitServices.server.luau"
+  ]
+}

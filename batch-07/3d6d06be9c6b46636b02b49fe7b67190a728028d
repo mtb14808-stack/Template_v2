@@ -1,0 +1,43 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local ApplyHover = require(script.Parent.Parent.Utils.ApplyHover)
+
+local create = Vide.create
+
+export type Props = {
+	UseHover: boolean?,
+	HoverMult: number?,
+	MouseEnterHover: boolean?,
+	MouseLeaveHover: boolean?,
+	MouseButton1DownHover: boolean?,
+	MouseButton1UpHover: boolean?,
+	MouseEnter: ((number, number) -> ())?,
+	MouseLeave: ((number, number) -> ())?,
+	GroupTransparency: (number | () -> number)?,
+	GroupColor3: (Color3 | () -> Color3)?,
+	Size: (UDim2 | () -> UDim2)?,
+	Position: (UDim2 | () -> UDim2)?,
+	AnchorPoint: (Vector2 | () -> Vector2)?,
+	BackgroundTransparency: (number | () -> number)?,
+	BackgroundColor3: (Color3 | () -> Color3)?,
+	BorderSizePixel: (number | () -> number)?,
+	BorderColor3: (Color3 | () -> Color3)?,
+	ZIndex: (number | () -> number)?,
+	LayoutOrder: (number | () -> number)?,
+	Visible: (boolean | () -> boolean)?,
+	AutomaticSize: (Enum.AutomaticSize | () -> Enum.AutomaticSize)?,
+	SizeConstraint: (Enum.SizeConstraint | () -> Enum.SizeConstraint)?,
+	ClipsDescendants: (boolean | () -> boolean)?,
+	[any]: any,
+}
+
+return function(props: Props)
+	local groupProps = table.clone(props)
+
+	groupProps.AnchorPoint = props.AnchorPoint or Vector2.new(0.5, 0.5)
+	groupProps.Position = props.Position or UDim2.fromScale(0.5, 0.5)
+	groupProps.Size = props.Size or UDim2.fromScale(1, 1)
+	groupProps.BackgroundTransparency = props.BackgroundTransparency or 1
+
+	return create("CanvasGroup")(ApplyHover(groupProps, props))
+end

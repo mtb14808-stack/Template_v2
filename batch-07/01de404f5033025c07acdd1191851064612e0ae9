@@ -1,0 +1,165 @@
+--!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local ApplyHover = require(script.Parent.Parent.Utils.ApplyHover)
+local TextSizing = require(script.Parent.Parent.Utils.TextSizing)
+
+export type ImageAsset = {
+	Image: string,
+	Size: UDim2?,
+}
+
+export type Prefix = {
+	Image: string | ImageAsset,
+	Size: (UDim2 | () -> UDim2)?,
+}
+
+local function read(value: any): any
+	return if type(value) == "function" then value() else value
+end
+
+
+return function(props: { [any]: any }, isButton: boolean, renderText: (any) -> Instance): Instance
+	local prefix: Prefix = props.Prefix
+	local asset = prefix.Image
+	local image = if type(asset) == "table" then asset.Image else asset
+	local assetSize = if type(asset) == "table" then asset.Size else nil
+	local localSize = Vide.source(Vector2.zero)
+	local textBounds = Vide.source(Vector2.zero)
+	local layoutScale = Vide.source(1)
+	local create = Vide.create
+
+	local geometry = Vide.derive(function()
+		local bounds = localSize()
+		local size = read(prefix.Size) or assetSize or UDim2.fromOffset(24, 24)
+		local mult = read(props.PrefixMult) or 1
+		local width = math.max(0, (bounds.X * size.X.Scale + size.X.Offset) * mult)
+		local height = math.max(0, (bounds.Y * size.Y.Scale + size.Y.Offset) * mult)
+		local gap = math.max(0, read(props.PrefixPadding) or 6)
+		local available = math.max(0, bounds.X - width - gap)
+		local used = math.min(available, textBounds().X / layoutScale())
+		local alignment = read(props.TextXAlignment) or Enum.TextXAlignment.Center
+		local factor = if alignment == Enum.TextXAlignment.Left then 0
+			elseif alignment == Enum.TextXAlignment.Right then 1 else 0.5
+		return {
+			Width = width,
+			Height = height,
+			Available = available,
+			Start = math.max(0, bounds.X - width - gap - used) * factor,
+			Gap = gap,
+		}
+	end)
+
+	local textProps = table.clone(props)
+	textProps.UseHover = false
+	textProps.MouseEnter = nil
+	textProps.MouseLeave = nil
+	textProps.InputBegan = nil
+	textProps.InputEnded = nil
+	textProps.Prefix = nil
+	textProps.PrefixMult = nil
+	textProps.PrefixPadding = nil
+	textProps.Name = "PrefixText"
+	textProps.Size = function()
+		return UDim2.new(0, geometry().Available, 1, 0)
+	end
+	textProps.Position = function()
+		local g = geometry()
+		return UDim2.new(0, g.Start + g.Width + g.Gap, 0.5, 0)
+	end
+	textProps.AnchorPoint = Vector2.new(0, 0.5)
+	textProps.BackgroundTransparency = 1
+	textProps.BackgroundColor3 = nil
+	textProps.BorderSizePixel = 0
+	textProps.BorderColor3 = nil
+	textProps.Rotation = 0
+	textProps.LayoutOrder = nil
+	textProps.Visible = true
+	textProps.AutomaticSize = Enum.AutomaticSize.None
+	textProps.SizeConstraint = Enum.SizeConstraint.RelativeXY
+	textProps.UseFrameContainer = false
+	textProps.TextXAlignment = Enum.TextXAlignment.Left
+	textProps.Parent = nil
+	textProps.ZIndex = function()
+		return (read(props.ZIndex) or 2) + 1
+	end
+
+	local text = renderText(textProps) :: TextLabel
+	local foreground = (text:FindFirstChild("MainLabel") or text) :: TextLabel
+	text.ClipsDescendants = false
+	local function updateTextBounds()
+		textBounds(foreground.TextBounds)
+	end
+	local boundsConnection = foreground:GetPropertyChangedSignal("TextBounds"):Connect(updateTextBounds)
+	Vide.cleanup(function()
+		boundsConnection:Disconnect()
+	end)
+	updateTextBounds()
+
+	local rootProps: { [any]: any } = {
+		Name = props.Name or (if isButton then "TextButton" else "TextLabelFrame"),
+		Size = props.Size or UDim2.fromScale(1, 1),
+		Position = props.Position or UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = props.AnchorPoint or Vector2.new(0.5, 0.5),
+		BackgroundTransparency = props.BackgroundTransparency or 1,
+		BackgroundColor3 = props.BackgroundColor3,
+		BorderSizePixel = props.BorderSizePixel or 0,
+		BorderColor3 = props.BorderColor3,
+		ZIndex = props.ZIndex or 2,
+		LayoutOrder = props.LayoutOrder,
+		Visible = props.Visible,
+		AutomaticSize = props.AutomaticSize,
+		SizeConstraint = props.SizeConstraint,
+		Rotation = props.Rotation or 0,
+		Parent = props.Parent,
+		ClipsDescendants = false,
+		MouseEnter = props.MouseEnter,
+		MouseLeave = props.MouseLeave,
+		InputBegan = props.InputBegan,
+		InputEnded = props.InputEnded,
+
+		create("ImageLabel")({
+			Name = "Prefix",
+			Image = image,
+			BackgroundTransparency = 1,
+			ScaleType = Enum.ScaleType.Fit,
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = function()
+				return UDim2.new(0, geometry().Start, 0.5, 0)
+			end,
+			Size = function()
+				local g = geometry()
+				return UDim2.fromOffset(g.Width, g.Height)
+			end,
+			ZIndex = function()
+				return (read(props.ZIndex) or 2) + 2
+			end,
+		}),
+		text,
+	}
+
+	if isButton then
+		rootProps.Text = ""
+		for _, key in ipairs({
+			"AutoButtonColor", "Selected", "Active", "Activated", "MouseButton1Click",
+			"MouseButton1Down", "MouseButton1Up", "MouseEnter", "MouseLeave",
+		}) do
+			rootProps[key] = props[key]
+		end
+	end
+
+	local root = create(if isButton then "TextButton" else "Frame")(ApplyHover(rootProps, props)) :: GuiObject
+	local function updateSize()
+		local scale = TextSizing.GetScale(root)
+		layoutScale(scale)
+		localSize(root.AbsoluteSize / scale)
+	end
+	local sizeConnection = root:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateSize)
+	local ancestryConnection = root.AncestryChanged:Connect(updateSize)
+	Vide.cleanup(function()
+		sizeConnection:Disconnect()
+		ancestryConnection:Disconnect()
+	end)
+	updateSize()
+	return root
+end

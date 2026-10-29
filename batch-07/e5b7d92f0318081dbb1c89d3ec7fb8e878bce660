@@ -1,0 +1,282 @@
+local ContentProvider = game:GetService("ContentProvider")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
+local Workspace = game:GetService("Workspace")
+local SoundIds = require(ReplicatedStorage.SourceCode.Core.Configs.AssetsId.SoundIds)
+
+export type SoundData = {
+	id: string,
+	Volume: number,
+	Pitch: number,
+	TimeLenght: number,
+	Looped: boolean?,
+	Category: string?,
+}
+export type ActiveSounds = { [string]: Sound }
+export type Registry = { [string]: SoundData }
+export type SoundModule = {
+	Registry: Registry,
+	ActiveSounds: ActiveSounds,
+	Init: () -> (),
+	GetSound: (name: string) -> Sound?,
+	PlayWithOverWrite: (name: string) -> Sound?,
+	Play2DSound: (name: string) -> Sound?,
+	Play3DSound: (name: string, parent: Instance) -> Sound?,
+	PlayAt: (name: string, position: Vector3) -> Sound?,
+	Preload: (names: { string }?) -> (),
+	Stop: (name: string) -> (),
+	StopAll: () -> (),
+}
+type Voice = {
+	Sound: Sound,
+	Home: Folder,
+	Primary: boolean,
+	Name: string,
+	Busy: boolean,
+	Started: number,
+	Revision: number,
+	Target: Instance?,
+	Anchor: Attachment?,
+	Timer: thread?,
+}
+
+local MAX_VOICES = 16
+local Templates: { [string]: Sound } = {}
+local Pools: { [string]: { Voice } } = {}
+local ActiveSounds: ActiveSounds = {}
+local PreloadedIds: { [string]: boolean } = {}
+
+local function GetFolder(parent: Instance, name: string): Folder
+	local existing = parent:FindFirstChild(name)
+	if existing then
+		assert(existing:IsA("Folder"), "Expected audio folder: " .. existing:GetFullName())
+		return existing
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = name
+	folder.Parent = parent
+	return folder
+end
+
+local function PrepareTemplate(name: string): Sound?
+	local data = SoundIds[name]
+	if not data then
+		warn("Couldn't Find Sound for Name: " .. name)
+		return nil
+	end
+	local existing = Templates[name]
+	if existing and existing.Parent then return existing end
+	local looped = data.Looped == true or name:lower():find("loop", 1, true) ~= nil
+	local category = if looped then "Loops" else data.Category or "SFX"
+	local folder = GetFolder(SoundService, category)
+	local template = folder:FindFirstChild(name)
+	assert(not template or template:IsA("Sound"), "Expected audio asset: " .. name)
+	if not template then
+		template = Instance.new("Sound")
+		template.Name = name
+		template.Parent = folder
+	end
+	local sound = template :: Sound
+	sound.SoundId = data.id
+	sound.Volume = data.Volume
+	sound.PlaybackSpeed = data.Pitch
+	sound.Looped = looped
+	sound.PlayOnRemove = false
+	sound:SetAttribute("AudioTemplate", true)
+	Templates[name] = sound
+	return sound
+end
+
+local function CancelTimer(voice: Voice): ()
+	if voice.Timer then
+		task.cancel(voice.Timer)
+		voice.Timer = nil
+	end
+end
+
+local function Release(voice: Voice): ()
+	if not voice.Busy then return end
+	voice.Busy = false
+	voice.Revision += 1
+	CancelTimer(voice)
+	if ActiveSounds[voice.Name] == voice.Sound then ActiveSounds[voice.Name] = nil end
+	voice.Sound:Stop()
+	voice.Sound.TimePosition = 0
+	if not voice.Home:IsDescendantOf(SoundService) then
+		voice.Sound:Destroy()
+		return
+	end
+	voice.Sound.Parent = if voice.Primary then voice.Home else nil
+	voice.Target = nil
+	local anchor = voice.Anchor
+	voice.Anchor = nil
+	if anchor then anchor:Destroy() end
+end
+
+local function NewVoice(name: string, template: Sound, primary: boolean): Voice
+	local home = template.Parent :: Folder
+	local sound = if primary then template else template:Clone()
+	if not primary then
+		sound:Stop()
+		sound:SetAttribute("AudioTemplate", nil)
+		sound:SetAttribute("AudioVoice", true)
+		sound.Parent = nil
+	end
+	local voice: Voice = {
+		Sound = sound, Home = home, Primary = primary, Name = name, Busy = false,
+		Started = 0, Revision = 0, Target = nil, Anchor = nil, Timer = nil,
+	}
+	Pools[name] = Pools[name] or {}
+	table.insert(Pools[name], voice)
+	local function finished(): ()
+		if not sound.IsPlaying then Release(voice) end
+	end
+	sound.Ended:Connect(finished)
+	sound.Stopped:Connect(finished)
+	local homeConnection = home.Destroying:Connect(function(): ()
+		sound:Destroy()
+	end)
+	sound.Destroying:Once(function(): ()
+		homeConnection:Disconnect()
+		voice.Busy = false
+		CancelTimer(voice)
+		if ActiveSounds[name] == sound then ActiveSounds[name] = nil end
+		local pool = Pools[name]
+		local index = pool and table.find(pool, voice)
+		if index then table.remove(pool, index) end
+		local anchor = voice.Anchor
+		voice.Anchor = nil
+		voice.Target = nil
+		if anchor then anchor:Destroy() end
+	end)
+	return voice
+end
+
+local function Play(name: string, target: Instance?, position: Vector3?): Sound?
+	local template = PrepareTemplate(name)
+	if not template then return nil end
+	local pool = Pools[name]
+	local spatial = target ~= nil or position ~= nil
+	local selected: Voice? = nil
+	if pool then
+		for _, voice in pool do
+			if voice.Busy and voice.Sound.IsPlaying and template.Looped and voice.Target == target and position == nil then
+				return voice.Sound
+			end
+			if not voice.Busy and (not spatial or not voice.Primary) then
+				if not selected or voice.Primary then selected = voice end
+			end
+		end
+	end
+	if not selected then
+		if not pool or #pool < MAX_VOICES then
+			selected = NewVoice(name, template, false)
+		else
+			for _, voice in pool do
+				if (not spatial or not voice.Primary) and (not selected or voice.Started < selected.Started) then selected = voice end
+			end
+			Release(selected :: Voice)
+		end
+	end
+	local voice = selected :: Voice
+	voice.Revision += 1
+	local revision = voice.Revision
+	voice.Busy = true
+	voice.Started = os.clock()
+	voice.Target = target
+	local sound = voice.Sound
+	sound.SoundId = template.SoundId
+	if position then
+		local anchor = Instance.new("Attachment")
+		anchor.Name = name .. "Audio"
+		anchor.Parent = Workspace.Terrain
+		anchor.WorldPosition = position
+		voice.Anchor = anchor
+		sound.Parent = anchor
+	else
+		sound.Parent = target or voice.Home
+	end
+	sound.Volume = template.Volume
+	sound.PlaybackSpeed = template.PlaybackSpeed
+	sound.Looped = template.Looped
+	sound.TimePosition = 0
+	sound:Play()
+	if not sound.Looped then
+		local data = SoundIds[name]
+		local duration = math.max(data.TimeLenght, sound.TimeLength) / math.max(sound.PlaybackSpeed, 0.01) + 2
+		voice.Timer = task.delay(duration, function(): ()
+			voice.Timer = nil
+			if voice.Revision == revision then Release(voice) end
+		end)
+	end
+	return sound
+end
+
+local function Preload(names: { string }?): ()
+	local pending = {}
+	local ids = {}
+	for name in SoundIds do
+		if names and not table.find(names, name) then continue end
+		local template = PrepareTemplate(name)
+		if template and not PreloadedIds[template.SoundId] then
+			PreloadedIds[template.SoundId] = true
+			table.insert(pending, template)
+			table.insert(ids, template.SoundId)
+		end
+	end
+	if #pending == 0 then return end
+	task.spawn(function(): ()
+		local success, message = pcall(function(): ()
+			ContentProvider:PreloadAsync(pending)
+		end)
+		if not success then
+			for _, id in ids do PreloadedIds[id] = nil end
+			warn("[Sound] Preload failed: " .. tostring(message))
+		end
+	end)
+end
+
+local function Initialize(): ()
+	GetFolder(SoundService, "Loops")
+	GetFolder(SoundService, "SFX")
+	for name in SoundIds do
+		local template = PrepareTemplate(name)
+		local pool = Pools[name]
+		if template and (not pool or #pool == 0) then NewVoice(name, template, true) end
+	end
+	Preload(nil)
+end
+
+Initialize()
+
+return {
+	Registry = SoundIds,
+	ActiveSounds = ActiveSounds,
+	Init = function(): () Initialize() end,
+	GetSound = function(name: string): Sound? return PrepareTemplate(name) end,
+	PlayWithOverWrite = function(name: string): Sound?
+		local previous = ActiveSounds[name]
+		if previous then previous:Stop() end
+		local sound = Play(name, nil, nil)
+		if sound then ActiveSounds[name] = sound end
+		return sound
+	end,
+	Play2DSound = function(name: string): Sound? return Play(name, nil, nil) end,
+	Play3DSound = function(name: string, parent: Instance): Sound?
+		if not parent or (not parent:IsA("BasePart") and not parent:IsA("Attachment")) then
+			warn("Expected BasePart or Attachment for 3D Sound: " .. name)
+			return nil
+		end
+		return Play(name, parent, nil)
+	end,
+	PlayAt = function(name: string, position: Vector3): Sound? return Play(name, nil, position) end,
+	Preload = function(names: { string }?): () Preload(names) end,
+	Stop = function(name: string): ()
+		for _, voice in Pools[name] or {} do Release(voice) end
+	end,
+	StopAll = function(): ()
+		for _, pool in Pools do
+			for _, voice in pool do Release(voice) end
+		end
+	end,
+} :: SoundModule

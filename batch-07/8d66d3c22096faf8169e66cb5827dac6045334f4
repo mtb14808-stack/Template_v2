@@ -1,0 +1,11 @@
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+
+return {
+	[1] = {
+		Text = "Collect The Food",
+		TargetParent = function()
+			return nil
+		end,
+	},
+}

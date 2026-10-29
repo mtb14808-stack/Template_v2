@@ -1,0 +1,50 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local MenuState = require(script.Parent.Sources.MenuState)
+
+export type Definition = {
+	Id: string,
+	AlwaysMounted: boolean,
+	DestroyDelay: number,
+	IsShown: () -> boolean,
+}
+
+local MenuLifecycle = {}
+local capture: { Definition: Definition? }? = nil
+
+local function read(value: any): any
+	return if type(value) == "function" then value() else value
+end
+
+function MenuLifecycle.IsShown(props: { [any]: any }): boolean
+	if read(props.Visible) == false then return false end
+	if props.Shown ~= nil then return read(props.Shown) == true end
+	return MenuState.openedMenu() == props.Id
+end
+
+function MenuLifecycle.Capture(props: { [any]: any }): boolean
+	if not capture then return false end
+	assert(not capture.Definition, "Each menu module must return one Menu or SubMenu")
+	capture.Definition = {
+		Id = props.Id,
+		AlwaysMounted = props.AlwaysMounted == true,
+		DestroyDelay = if props.DestroyDelay ~= nil then props.DestroyDelay else 0.35,
+		IsShown = function() return MenuLifecycle.IsShown(props) end,
+	}
+	return true
+end
+
+function MenuLifecycle.Describe(component: () -> any): Definition
+	local previous = capture
+	local context: { Definition: Definition? } = {}
+	capture = context
+	local success, result = pcall(Vide.root, component)
+	capture = previous
+	if not success then error(result, 0) end
+	local destroy = result :: () -> ()
+	destroy()
+	assert(context.Definition, "Menu module must return Menu({...}) or SubMenu({...})")
+	return context.Definition
+end
+
+return MenuLifecycle

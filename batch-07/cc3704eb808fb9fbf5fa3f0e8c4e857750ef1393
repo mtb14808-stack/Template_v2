@@ -1,0 +1,62 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+
+local ClientFolder = ReplicatedStorage:WaitForChild("SourceCode"):WaitForChild("Features")
+local create = Vide.create
+
+local ScreenModules = {}
+local SurfaceModules = {}
+
+for _, RootModule in ClientFolder:GetDescendants() do
+	if
+		RootModule:IsA("ModuleScript")
+		and RootModule.Name:find("Root")
+		and not RootModule.Name:find("%.story")
+		and RootModule ~= script
+		and RootModule.Name ~= "RootMenuUI"
+	then
+		local loadedModule = require(RootModule)
+
+		if type(loadedModule) == "function" then
+			if RootModule.Name:find("Leaderboard") then
+				table.insert(SurfaceModules, loadedModule)
+			else
+				table.insert(ScreenModules, loadedModule)
+			end
+		end
+	end
+end
+
+return function()
+	local renderedScreenRoots = {}
+	local renderedSurfaceRoots = {}
+
+	for _, rootComponent in ScreenModules do
+		local success, result = pcall(rootComponent)
+		if success and result then
+			table.insert(renderedScreenRoots, result)
+		elseif not success then
+			warn("[RootMenuUI] Screen root mount failed: " .. tostring(result))
+		end
+	end
+
+	for _, rootComponent in SurfaceModules do
+		local success, result = pcall(rootComponent)
+		if success and result then
+			table.insert(renderedSurfaceRoots, result)
+		elseif not success then
+			warn("[RootMenuUI] Surface root mount failed: " .. tostring(result))
+		end
+	end
+
+	return {
+		create("ScreenGui")({
+			Name = "MainRoot",
+			ResetOnSpawn = false,
+			IgnoreGuiInset = true,
+			ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+			renderedScreenRoots,
+		}),
+		renderedSurfaceRoots,
+	}
+end

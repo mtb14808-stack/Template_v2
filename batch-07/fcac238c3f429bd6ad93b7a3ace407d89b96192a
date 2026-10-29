@@ -1,0 +1,13 @@
+local Menu = require(script.Parent.Menu)
+
+export type Props = Menu.Props
+
+local Layout: Menu.Defaults = {
+	Size = UDim2.fromOffset(950, 735),
+	HeaderPosition = UDim2.fromScale(0.2, 0.02),
+	HeaderSize = UDim2.fromOffset(543, 149),
+}
+
+return function(props: Props): Frame
+	return Menu(props, Layout)
+end

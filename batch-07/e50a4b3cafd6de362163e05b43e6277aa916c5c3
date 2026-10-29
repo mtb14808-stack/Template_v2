@@ -1,0 +1,80 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local networker = require(ReplicatedStorage.Packages.networker)
+local Animation = require(ReplicatedStorage.SourceCode.Core.Utilities.Animation)
+local Sound = require(ReplicatedStorage.SourceCode.Core.Utilities.Sound)
+
+local TargetFolder = ReplicatedStorage:WaitForChild("SourceCode"):WaitForChild("Features")
+
+local ClientInit = {}
+
+ClientInit.ClientReady = networker.client.new("ClientReady", ClientInit)
+
+function ClientInit.InitClient()
+	Sound.Init()
+	if typeof(Animation.Init) == "function" then
+		local animSuccess, animErr = pcall(Animation.Init)
+		if not animSuccess then
+			warn("[ClientInit] Error in Animation.Init: " .. tostring(animErr))
+		end
+	end
+
+	local moduleScripts = {}
+	for _, moduleScript in TargetFolder:GetDescendants() do
+		if moduleScript:IsA("ModuleScript") then
+			table.insert(moduleScripts, moduleScript)
+		end
+	end
+
+	local totalModules = #moduleScripts
+	if totalModules == 0 then
+		ClientInit.ClientReady:fire("OnClientReady")
+		return
+	end
+
+	local loadedModules = {}
+	for _, moduleScript in moduleScripts do
+		local success, loadedModule = pcall(require, moduleScript)
+		if success then
+			if typeof(loadedModule) == "table" then
+				table.insert(loadedModules, {
+					Name = moduleScript.Name,
+					Module = loadedModule,
+				})
+			end
+		else
+			warn("[ClientInit] Require Error in [" .. moduleScript.Name .. "]: " .. tostring(loadedModule))
+		end
+	end
+
+	local completedModules = 0
+
+	if #loadedModules == 0 then
+		ClientInit.ClientReady:fire("OnClientReady")
+		return
+	end
+
+	for _, serviceData in loadedModules do
+		task.spawn(function()
+			local module = serviceData.Module
+			local initFn = module.Init or module.init
+
+			if typeof(initFn) == "function" then
+				local initSuccess, err = pcall(function()
+					initFn(module)
+				end)
+
+				if not initSuccess then
+					warn("[ClientInit] Init Error in [" .. serviceData.Name .. "]: " .. tostring(err))
+				end
+			end
+
+			completedModules += 1
+
+			if completedModules == #loadedModules then
+				ClientInit.ClientReady:fire("OnClientReady")
+			end
+		end)
+	end
+end
+
+return ClientInit

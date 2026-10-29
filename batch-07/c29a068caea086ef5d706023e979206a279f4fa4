@@ -1,0 +1,21 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local SocialService = game:GetService("SocialService")
+return function()
+	if not RunService:IsRunning() or not RunService:IsClient() then
+		return
+	end
+
+	local TopbarPlus = require(ReplicatedStorage.Packages.TopbarPlus)
+	local Icon = TopbarPlus.new()
+
+	Icon:setImage(91349989997111):setImageScale(1.085)
+
+	Icon.selected:Connect(function()
+		Icon:deselect()
+
+		pcall(function()
+			SocialService:PromptFeedbackSubmissionAsync()
+		end)
+	end)
+end

@@ -1,0 +1,222 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local Elements = ReplicatedStorage.SourceCode.Core.Ui.Elements
+local ImageButton = require(Elements.ImageButton)
+local TextLabel = require(Elements.TextLabel)
+local TextPrefix = require(Elements.TextPrefix)
+local Hover = require(Elements.Parent.Utils.Hover)
+local VideChildrenHandler = require(ReplicatedStorage.SourceCode.Core.Utilities.VideChildrenHandler)
+
+export type Reactive<T> = T | (() -> T)
+export type Theme = "Green" | "Robux" | "None"
+export type HoverOptions = Hover.HoverOptions
+export type Prefix = TextPrefix.Prefix | string
+export type ThemesType = {
+	ImageId: string,
+	PixelSize: UDim2,
+}
+export type Props = {
+	Theme: Theme?,
+	SizeMult: Reactive<number>?,
+	Text: Reactive<string>?,
+	TextProps: TextLabel.Props?,
+	TextBoxSize: Reactive<UDim2>?,
+	TextPosition: Reactive<UDim2>?,
+	TextAnchorPoint: Reactive<Vector2>?,
+	Prefix: Prefix?,
+	PrefixMult: Reactive<number>?,
+	PrefixPadding: Reactive<number>?,
+	TextColor3: Reactive<Color3>?,
+	TextSize: Reactive<number>?,
+	TextScaled: Reactive<boolean>?,
+	Font: Reactive<Enum.Font>?,
+	FontFace: Reactive<Font>?,
+	TextTransparency: Reactive<number>?,
+	TextStrokeColor3: Reactive<Color3>?,
+	TextStrokeTransparency: Reactive<number>?,
+	TextDirection: Reactive<Enum.TextDirection>?,
+	TextTruncate: Reactive<Enum.TextTruncate>?,
+	TextWrapped: Reactive<boolean>?,
+	TextXAlignment: Reactive<Enum.TextXAlignment>?,
+	TextYAlignment: Reactive<Enum.TextYAlignment>?,
+	RichText: Reactive<boolean>?,
+	MaxVisibleGraphemes: Reactive<number>?,
+	LineHeight: Reactive<number>?,
+	Thickness: number?,
+	UseShadow: Reactive<boolean>?,
+	ShadowOffset: Reactive<UDim2>?,
+	ShadowColor3: Reactive<Color3>?,
+	UseFrameContainer: Reactive<boolean>?,
+	UseHover: boolean?,
+	HoverMult: number?,
+	HoverOptions: HoverOptions?,
+	MouseEnterHover: boolean?,
+	MouseLeaveHover: boolean?,
+	MouseButton1DownHover: boolean?,
+	MouseButton1UpHover: boolean?,
+	Name: Reactive<string>?,
+	Parent: Reactive<Instance>?,
+	Archivable: Reactive<boolean>?,
+	Size: Reactive<UDim2>?,
+	Position: Reactive<UDim2>?,
+	AnchorPoint: Reactive<Vector2>?,
+	Rotation: Reactive<number>?,
+	SizeConstraint: Reactive<Enum.SizeConstraint>?,
+	AutomaticSize: Reactive<Enum.AutomaticSize>?,
+	BackgroundColor3: Reactive<Color3>?,
+	BackgroundTransparency: Reactive<number>?,
+	BorderColor3: Reactive<Color3>?,
+	BorderSizePixel: Reactive<number>?,
+	BorderMode: Reactive<Enum.BorderMode>?,
+	ClipsDescendants: Reactive<boolean>?,
+	LayoutOrder: Reactive<number>?,
+	Visible: Reactive<boolean>?,
+	ZIndex: Reactive<number>?,
+	Image: Reactive<string>?,
+	ImageContent: Reactive<Content>?,
+	ImageColor3: Reactive<Color3>?,
+	ImageTransparency: Reactive<number>?,
+	ImageRectOffset: Reactive<Vector2>?,
+	ImageRectSize: Reactive<Vector2>?,
+	ScaleType: Reactive<Enum.ScaleType>?,
+	SliceCenter: Reactive<Rect>?,
+	SliceScale: Reactive<number>?,
+	TileSize: Reactive<UDim2>?,
+	ResampleMode: Reactive<Enum.ResamplerMode>?,
+	HoverImage: Reactive<string>?,
+	HoverImageContent: Reactive<Content>?,
+	PressedImage: Reactive<string>?,
+	PressedImageContent: Reactive<Content>?,
+	AutoButtonColor: Reactive<boolean>?,
+	Active: Reactive<boolean>?,
+	Interactable: Reactive<boolean>?,
+	Modal: Reactive<boolean>?,
+	Selected: Reactive<boolean>?,
+	Selectable: Reactive<boolean>?,
+	SelectionOrder: Reactive<number>?,
+	SelectionImageObject: Reactive<GuiObject>?,
+	SelectionGroup: Reactive<boolean>?,
+	SelectionBehaviorDown: Reactive<Enum.SelectionBehavior>?,
+	SelectionBehaviorLeft: Reactive<Enum.SelectionBehavior>?,
+	SelectionBehaviorRight: Reactive<Enum.SelectionBehavior>?,
+	SelectionBehaviorUp: Reactive<Enum.SelectionBehavior>?,
+	NextSelectionDown: Reactive<GuiObject>?,
+	NextSelectionLeft: Reactive<GuiObject>?,
+	NextSelectionRight: Reactive<GuiObject>?,
+	NextSelectionUp: Reactive<GuiObject>?,
+	AutoLocalize: Reactive<boolean>?,
+	RootLocalizationTable: Reactive<LocalizationTable>?,
+	Style: Reactive<Enum.ButtonStyle>?,
+	HoverHapticEffect: Reactive<HapticEffect>?,
+	PressHapticEffect: Reactive<HapticEffect>?,
+	Activated: ((inputObject: InputObject, clickCount: number) -> ())?,
+	SecondaryActivated: ((inputObject: InputObject) -> ())?,
+	MouseButton1Click: (() -> ())?,
+	MouseButton1Down: ((x: number, y: number) -> ())?,
+	MouseButton1Up: ((x: number, y: number) -> ())?,
+	MouseButton2Click: (() -> ())?,
+	MouseButton2Down: ((x: number, y: number) -> ())?,
+	MouseButton2Up: ((x: number, y: number) -> ())?,
+	MouseEnter: ((x: number, y: number) -> ())?,
+	MouseLeave: ((x: number, y: number) -> ())?,
+	MouseMoved: ((x: number, y: number) -> ())?,
+	MouseWheelForward: ((x: number, y: number) -> ())?,
+	MouseWheelBackward: ((x: number, y: number) -> ())?,
+	InputBegan: ((input: InputObject) -> ())?,
+	InputChanged: ((input: InputObject) -> ())?,
+	InputEnded: ((input: InputObject) -> ())?,
+	TouchTap: ((touchPositions: { Vector2 }) -> ())?,
+	TouchLongPress: ((touchPositions: { Vector2 }, state: Enum.UserInputState) -> ())?,
+	TouchPan: ((touchPositions: { Vector2 }, totalTranslation: Vector2, velocity: Vector2, state: Enum.UserInputState) -> ())?,
+	TouchPinch: ((touchPositions: { Vector2 }, scale: number, velocity: number, state: Enum.UserInputState) -> ())?,
+	TouchRotate: ((touchPositions: { Vector2 }, rotation: number, velocity: number, state: Enum.UserInputState) -> ())?,
+	TouchSwipe: ((swipeDirection: Enum.SwipeDirection, numberOfTouches: number) -> ())?,
+	SelectionGained: (() -> ())?,
+	SelectionLost: (() -> ())?,
+	SelectionChanged: ((amISelected: boolean, previousSelection: GuiObject?, newSelection: GuiObject?) -> ())?,
+	DragBegin: ((initialPosition: UDim2) -> ())?,
+	DragStopped: ((x: number, y: number) -> ())?,
+	Changed: ((property: string) -> ())?,
+	AttributeChanged: ((attribute: string) -> ())?,
+	AncestryChanged: ((child: Instance, parent: Instance?) -> ())?,
+	ChildAdded: ((child: Instance) -> ())?,
+	ChildRemoved: ((child: Instance) -> ())?,
+	DescendantAdded: ((descendant: Instance) -> ())?,
+	DescendantRemoving: ((descendant: Instance) -> ())?,
+	Destroying: (() -> ())?,
+	Children: any?,
+	[number]: any,
+}
+
+local Themes: { [string]: ThemesType } = {
+	Green = { ImageId = "rbxassetid://84193398649492", PixelSize = UDim2.fromOffset(230, 100) },
+	Robux = { ImageId = "rbxassetid://97626355382355", PixelSize = UDim2.fromOffset(230, 100) },
+	None = { ImageId = "", PixelSize = UDim2.fromOffset(230, 100) },
+}
+
+local TextProperties = {
+	"Text", "TextColor3", "TextSize", "TextScaled", "Font", "FontFace",
+	"TextTransparency", "TextStrokeColor3", "TextStrokeTransparency", "TextDirection",
+	"TextTruncate", "TextWrapped", "TextXAlignment", "TextYAlignment", "RichText",
+	"MaxVisibleGraphemes", "LineHeight", "Thickness", "UseShadow", "ShadowOffset",
+	"ShadowColor3", "UseFrameContainer", "Prefix", "PrefixMult", "PrefixPadding",
+}
+
+local function read(value: any): any
+	return if type(value) == "function" then value() else value
+end
+
+return function(props: Props): ImageButton
+	local theme = Themes[props.Theme or "Green"]
+	assert(theme, "Unknown CustomButton theme: " .. tostring(props.Theme))
+
+	local buttonProps = VideChildrenHandler(props)
+	local textProps: { [any]: any } = table.clone(props.TextProps or {})
+
+	for _, name in TextProperties do
+		buttonProps[name] = nil
+		local value = (props :: any)[name]
+		if value ~= nil then textProps[name] = value end
+	end
+
+	buttonProps.Name = buttonProps.Name or "CustomButton"
+	if buttonProps.Image == nil and buttonProps.ImageContent == nil then
+		buttonProps.Image = theme.ImageId
+	end
+	if buttonProps.Size == nil then
+		buttonProps.Size = theme.PixelSize
+		if props.SizeMult ~= nil then
+			table.insert(buttonProps, Vide.create("UIScale")({
+				Name = "ButtonSizeScale",
+				Scale = function(): number
+					return read(props.SizeMult) or 1
+				end,
+			}))
+		end
+	end
+	if buttonProps.AutoButtonColor == nil then buttonProps.AutoButtonColor = false end
+	buttonProps.UseHover = if props.UseHover ~= nil then props.UseHover else true
+	buttonProps.HoverMult = props.HoverMult
+	buttonProps.HoverOptions = props.HoverOptions
+	buttonProps.MouseEnterHover = props.MouseEnterHover
+	buttonProps.MouseLeaveHover = props.MouseLeaveHover
+	buttonProps.MouseButton1DownHover = props.MouseButton1DownHover
+	buttonProps.MouseButton1UpHover = props.MouseButton1UpHover
+
+	textProps.Name = textProps.Name or "ButtonText"
+	textProps.Text = if textProps.Text ~= nil then textProps.Text else "BUTTON"
+	textProps.Size = props.TextBoxSize or textProps.Size or UDim2.fromScale(0.85, 0.8)
+	textProps.Position = props.TextPosition or textProps.Position or UDim2.fromScale(0.5, 0.5)
+	textProps.AnchorPoint = props.TextAnchorPoint or textProps.AnchorPoint or Vector2.new(0.5, 0.5)
+	textProps.ZIndex = textProps.ZIndex or function() return (read(props.ZIndex) or 1) + 1 end
+	textProps.Thickness = if textProps.Thickness ~= nil then textProps.Thickness else 4
+	textProps.BackgroundTransparency = if textProps.BackgroundTransparency ~= nil then textProps.BackgroundTransparency else 1
+	textProps.UseHover = false
+	textProps.Parent = nil
+	if typeof(textProps.Prefix) == "string" then textProps.Prefix = { Image = textProps.Prefix } end
+
+	if props.Children ~= nil then table.insert(buttonProps, props.Children) end
+	table.insert(buttonProps, TextLabel(textProps))
+	return ImageButton(buttonProps) :: ImageButton
+end
+

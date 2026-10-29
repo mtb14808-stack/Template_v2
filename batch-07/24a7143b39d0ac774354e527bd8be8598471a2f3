@@ -1,0 +1,218 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextService = game:GetService("TextService")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local TutorialSource = require(ReplicatedStorage.SourceCode.Features.Tutorial.UI.Sources.TutorialSource)
+local PngIds = require(ReplicatedStorage.SourceCode.Core.Configs.AssetsId.PngIds)
+local Frame = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.Frame)
+local ImageLabel = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.ImageLabel)
+local ScaledFrame = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.ScaledFrame)
+local TextLabel = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.TextLabel)
+local UIStroke = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.UIStroke)
+local ViewPortSizeSource = require(ReplicatedStorage.SourceCode.Core.Ui.Sources.ViewPortSizeSource)
+local Spring = require(ReplicatedStorage.SourceCode.Core.Ui.Utils.Spring)
+
+local RotationTarget = 30
+local BASE_SCALE = 1.5
+local TEXT_SIZE = 42
+local LightBulbRawSize = PngIds.LightBulb.Size or UDim2.fromOffset(299, 436)
+local LightBulbSize = UDim2.fromOffset(LightBulbRawSize.X.Offset / 6, LightBulbRawSize.Y.Offset / 6.5)
+
+return function()
+	return Vide.show(TutorialSource.MountSource, function()
+		local SizeSpring, _, Ended = Spring.TriggerSpring(function()
+			return TutorialSource.ActiveSource() == true and 1 or 0
+		end, 1, 1, 0.2, 1)
+
+		local ChangeTextSpring, ChangeTextControl = Spring.NormalSpring(1, 1, 0.2, 1)
+		local Direction = Vide.source(-1)
+		local DisplayedText = Vide.source(TutorialSource.TextSource())
+		local RotationSpring = Spring.NormalSpring(function()
+			return Direction() * RotationTarget
+		end, Direction() * RotationTarget, 1.4, 0.7)
+
+		local RotationThread = task.spawn(function()
+			while true do
+				Direction(Direction() * -1)
+				task.wait(0.61)
+			end
+		end)
+
+		Vide.cleanup(function()
+			if RotationThread then
+				task.cancel(RotationThread)
+				RotationThread = nil
+			end
+		end)
+
+		Vide.effect(function()
+			local CurrentText = TutorialSource.TextSource()
+			if CurrentText ~= DisplayedText() then
+				ChangeTextControl({ position = 0 })
+				DisplayedText(CurrentText)
+			end
+		end)
+
+		Vide.effect(function()
+			local ShouldUnMount = if Ended() == true and TutorialSource.ActiveSource() == false then true else false
+			if ShouldUnMount then
+				TutorialSource.MountSource(false)
+			end
+		end)
+
+		local DriveProps = Vide.derive(function()
+			local text = DisplayedText()
+			local font = Enum.Font.BuilderSansExtraBold
+			local viewport = ViewPortSizeSource()
+			local viewportScale = math.max(0.0001, math.min(viewport.X / 1920, viewport.Y / 1080))
+			local scale = viewportScale * BASE_SCALE
+			local margin = math.clamp(viewport.X * 0.04, 16, 64)
+			local availableWidth = math.max(1, (viewport.X - margin * 2) / scale)
+			local textSize = math.clamp(math.ceil(math.max(TEXT_SIZE, 18 / scale)), 1, 100)
+			local screenTextSize = math.ceil(textSize * scale)
+			local iconHeight = math.max(LightBulbSize.Y.Offset, 32 / scale)
+			local iconWidth = iconHeight * LightBulbSize.X.Offset / LightBulbSize.Y.Offset
+			local angle = math.rad(RotationTarget)
+			local iconAreaWidth = math.max(iconWidth, iconWidth * math.cos(angle) + iconHeight * math.sin(angle))
+			local iconAreaHeight = math.max(iconHeight, iconHeight * math.cos(angle) + iconWidth * math.sin(angle))
+			local gap = math.max(10, 6 / scale)
+			local maxTextWidth = math.max(1, availableWidth - iconAreaWidth - gap)
+			local naturalBounds = TextService:GetTextSize(text, screenTextSize, font, Vector2.new(100000, 100000))
+			local textWidth = math.min(maxTextWidth, (naturalBounds.X + 8) / scale)
+			local measureWidth = math.max(1, math.floor(textWidth * scale) - 8)
+			local textBounds = TextService:GetTextSize(text, screenTextSize, font, Vector2.new(measureWidth, 100000))
+			local textHeight = math.max(1, (textBounds.Y + 8) / scale)
+			local width = iconAreaWidth + gap + textWidth
+
+			return {
+				Text = text,
+				TextColor = TutorialSource.TextColorSource(),
+				font = font,
+				TextSize = textSize,
+				TextWidth = textWidth,
+				TextHeight = textHeight,
+				IconWidth = iconWidth,
+				IconHeight = iconHeight,
+				IconAreaWidth = iconAreaWidth,
+				IconAreaHeight = iconAreaHeight,
+				Gap = gap,
+				Width = width,
+				Height = math.max(iconAreaHeight, textHeight),
+				MaxScale = math.max(0, (viewport.X - margin * 2) / (width * viewportScale)),
+			}
+		end)
+
+		return ScaledFrame({
+			ZIndex = 30,
+			Name = "Tutorial",
+			BackgroundTransparency = 1,
+			Size = function()
+				local layout = DriveProps()
+				return UDim2.fromOffset(layout.Width * BASE_SCALE, layout.Height * BASE_SCALE)
+			end,
+			ClipsDescendants = false,
+			Position = UDim2.fromScale(0.5, 0.22),
+			Frame({
+				Name = "Container",
+				Frame({
+					Name = "Tutorial_Container",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.fromScale(0.5, 0.5),
+					Size = function()
+						local layout = DriveProps()
+						return UDim2.fromOffset(layout.Width, layout.Height)
+					end,
+
+					Vide.create("UIScale")({
+						Scale = function()
+							local s1 = SizeSpring()
+							local s2 = ChangeTextSpring()
+
+							return math.clamp(BASE_SCALE * s1 * s2, 0, DriveProps().MaxScale)
+						end,
+					}),
+
+					Frame({
+						ZIndex = 2,
+						AnchorPoint = Vector2.new(0, 0.5),
+						Position = UDim2.fromScale(0, 0.5),
+						Size = function()
+							local layout = DriveProps()
+							return UDim2.fromOffset(layout.IconAreaWidth, layout.IconAreaHeight)
+						end,
+						LayoutOrder = 1,
+						Name = "LighBulbContainer",
+						BackgroundTransparency = 1,
+						ImageLabel({
+							Name = "LightBulb",
+							LayoutOrder = 1,
+							Image = PngIds.LightBulb.Image,
+							Size = function()
+								local layout = DriveProps()
+								return UDim2.fromOffset(layout.IconWidth, layout.IconHeight)
+							end,
+							AnchorPoint = Vector2.new(0.5, 0.5),
+							Position = UDim2.fromScale(0.5, 0.5),
+							Rotation = function()
+								return RotationSpring()
+							end,
+						}),
+					}),
+					TextLabel({
+						Name = "TextContent",
+						LayoutOrder = 2,
+						ZIndex = 3,
+						AnchorPoint = Vector2.new(0, 0.5),
+						Position = function()
+							local layout = DriveProps()
+							return UDim2.new(0, layout.IconAreaWidth + layout.Gap, 0.5, 0)
+						end,
+						BackgroundTransparency = 1,
+						Font = function()
+							return DriveProps().font
+						end,
+						UseShadow = false,
+						UseFrameContainer = true,
+						TextWrapped = true,
+						TextTruncate = Enum.TextTruncate.None,
+						MaxVisibleGraphemes = -1,
+						TextScaled = false,
+						TextSize = function()
+							return DriveProps().TextSize
+						end,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextYAlignment = Enum.TextYAlignment.Center,
+						Size = function()
+							return UDim2.fromOffset(DriveProps().TextWidth, DriveProps().TextHeight)
+						end,
+						UIStroke({
+							Thickness = function()
+								return 3 * DriveProps().TextSize / TEXT_SIZE
+							end,
+						}),
+						Text = function()
+							return DriveProps().Text
+						end,
+						TextColor3 = function()
+							return DriveProps().TextColor or Color3.new(1, 1, 1)
+						end,
+					}),
+					ImageLabel({
+						ZIndex = 1,
+						Name = "DropShadow",
+						Image = PngIds.TextDropShadow.Image,
+						Size = function()
+							local layout = DriveProps()
+							return UDim2.fromOffset(layout.TextWidth * 1.5 + 40, layout.TextHeight * 1.8 + 20)
+						end,
+						Position = function()
+							local layout = DriveProps()
+							return UDim2.new(0, layout.IconAreaWidth + layout.Gap + layout.TextWidth * 0.5, 0.5, layout.TextHeight * 0.05)
+						end,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						ImageTransparency = 0.54,
+					}),
+				}),
+			}),
+		})
+	end)
+end

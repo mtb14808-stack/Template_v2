@@ -1,0 +1,47 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local ApplyHover = require(script.Parent.Parent.Utils.ApplyHover)
+
+export type Props = {
+	UseHover: boolean?,
+	HoverMult: number?,
+	MouseEnterHover: boolean?,
+	MouseLeaveHover: boolean?,
+	MouseButton1DownHover: boolean?,
+	MouseButton1UpHover: boolean?,
+	MouseEnter: ((number, number) -> ())?,
+	MouseLeave: ((number, number) -> ())?,
+	CurrentCamera: (Camera | () -> Camera?)?,
+	Ambient: (Color3 | () -> Color3)?,
+	LightColor: (Color3 | () -> Color3)?,
+	LightDirection: (Vector3 | () -> Vector3)?,
+	ImageColor3: (Color3 | () -> Color3)?,
+	ImageTransparency: (number | () -> number)?,
+	Size: (UDim2 | () -> UDim2)?,
+	Position: (UDim2 | () -> UDim2)?,
+	AnchorPoint: (Vector2 | () -> Vector2)?,
+	BackgroundTransparency: (number | () -> number)?,
+	BackgroundColor3: (Color3 | () -> Color3)?,
+	BorderSizePixel: (number | () -> number)?,
+	BorderColor3: (Color3 | () -> Color3)?,
+	ZIndex: (number | () -> number)?,
+	LayoutOrder: (number | () -> number)?,
+	Visible: (boolean | () -> boolean)?,
+	AutomaticSize: (Enum.AutomaticSize | () -> Enum.AutomaticSize)?,
+	SizeConstraint: (Enum.SizeConstraint | () -> Enum.SizeConstraint)?,
+	ClipsDescendants: (boolean | () -> boolean)?,
+	Children: any?,
+	[any]: any,
+}
+
+return function(props: Props): ViewportFrame
+	local viewportProps = table.clone(props)
+	viewportProps.Children = nil
+	viewportProps.AnchorPoint = props.AnchorPoint or Vector2.new(0.5, 0.5)
+	viewportProps.Position = props.Position or UDim2.fromScale(0.5, 0.5)
+	viewportProps.Size = props.Size or UDim2.fromScale(1, 1)
+	viewportProps.BackgroundTransparency = props.BackgroundTransparency or 1
+	if props.ClipsDescendants == nil then viewportProps.ClipsDescendants = false end
+	if props.Children ~= nil then table.insert(viewportProps, props.Children) end
+	return Vide.create("ViewportFrame")(ApplyHover(viewportProps, props))
+end

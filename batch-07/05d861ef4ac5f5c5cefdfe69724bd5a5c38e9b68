@@ -1,0 +1,470 @@
+local Ragdoll = {}
+local Controller = {}
+Controller.__index = Controller
+
+export type Options = {
+	Duration: number?,
+}
+
+export type Controller = {
+	SetPivot: (self: Controller, pivot: CFrame, alpha: number?) -> (),
+	Stop: (self: Controller) -> (),
+	Destroy: (self: Controller) -> (),
+}
+
+type Joint = Motor6D | AnimationConstraint
+type JointState = { Joint: Joint, Enabled: boolean }
+type ConstraintState = {
+	Constraint: BallSocketConstraint | HingeConstraint,
+	Enabled: boolean,
+	Restitution: number?,
+	MaxFrictionTorque: number?,
+}
+type PartState = {
+	Part: BasePart,
+	Anchored: boolean,
+	CanCollide: boolean,
+	CanTouch: boolean,
+	Massless: boolean,
+}
+
+local Active: { [Model]: any } = {}
+local BodyNames = {
+	R6 = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" },
+	R15 = {
+		"Head", "UpperTorso", "LowerTorso",
+		"LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand",
+		"LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot",
+	},
+}
+
+local function AttachmentPart(attachment: Attachment?): BasePart?
+	local parent = if attachment then attachment.Parent else nil
+	while parent and not parent:IsA("BasePart") do
+		parent = parent.Parent
+	end
+	return if parent and parent:IsA("BasePart") then parent else nil
+end
+
+local function JointParts(joint: Joint): (BasePart?, BasePart?)
+	if joint:IsA("Motor6D") then
+		return joint.Part0, joint.Part1
+	end
+	return AttachmentPart(joint.Attachment0), AttachmentPart(joint.Attachment1)
+end
+
+local function Limits(name: string): (number, number)
+	if name:find("Neck") then
+		return 35, 40
+	elseif name:find("Waist") then
+		return 25, 25
+	elseif name:find("Wrist") or name:find("Ankle") then
+		return 25, 20
+	elseif name:find("Elbow") or name:find("Knee") then
+		return 80, 10
+	end
+	return 65, 40
+end
+
+local function Recover(self)
+	local humanoid, root = self.Humanoid, self.Root
+	if not humanoid.Parent or humanoid.Health <= 0 or not root.Parent or not self.Model:IsDescendantOf(workspace) then
+		return
+	end
+	if self.HumanoidState.PlatformStand or self.HumanoidState.State == Enum.HumanoidStateType.Physics then
+		return
+	end
+	local edges = {}
+	for _, state: JointState in self.Joints do
+		local joint = state.Joint
+		local part0, part1 = JointParts(joint)
+		if joint.Parent and part0 and part1 then
+			local frame0 = if joint:IsA("Motor6D") then joint.C0 else part0.CFrame:ToObjectSpace(joint.Attachment0.WorldCFrame)
+			local frame1 = if joint:IsA("Motor6D") then joint.C1 else part1.CFrame:ToObjectSpace(joint.Attachment1.WorldCFrame)
+			edges[part0] = edges[part0] or {}
+			edges[part1] = edges[part1] or {}
+			local offset = frame0 * joint.Transform * frame1:Inverse()
+			table.insert(edges[part0], { Part = part1, Offset = offset })
+			table.insert(edges[part1], { Part = part0, Offset = offset:Inverse() })
+		end
+	end
+	local position = root.Position
+	local height = humanoid.HipHeight + root.Size.Y * 0.5
+	if humanoid.RigType == Enum.HumanoidRigType.R6 then
+		local leg = self.Model:FindFirstChild("Left Leg") or self.Model:FindFirstChild("Right Leg")
+		if leg and leg:IsA("BasePart") then
+			height += leg.Size.Y
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { self.Model }
+	params.RespectCanCollide = true
+	local floor = workspace:Raycast(position + Vector3.yAxis * height, -Vector3.yAxis * (height * 2 + 1), params)
+	if floor and floor.Normal.Y > 0.5 then
+		position = Vector3.new(position.X, math.max(position.Y, floor.Position.Y + height + 0.1), position.Z)
+	end
+	local look = root.CFrame.LookVector * Vector3.new(1, 0, 1)
+	if look.Magnitude < 0.001 then
+		look = -Vector3.zAxis
+	end
+	root.CFrame = CFrame.lookAt(position, position + look)
+	local queue = { root }
+	local visited = { [root] = true }
+	local index = 1
+	while index <= #queue do
+		local part = queue[index]
+		for _, edge in edges[part] or {} do
+			if not visited[edge.Part] then
+				visited[edge.Part] = true
+				edge.Part.CFrame = part.CFrame * edge.Offset
+				table.insert(queue, edge.Part)
+			end
+		end
+		index += 1
+	end
+	for _, state: PartState in self.Parts do
+		if state.Part.Parent then
+			state.Part.AssemblyLinearVelocity = Vector3.zero
+			state.Part.AssemblyAngularVelocity = Vector3.zero
+		end
+	end
+end
+
+local function Finish(self, restore: boolean)
+	if self.Destroyed then
+		return
+	end
+	self.Destroyed = true
+	Active[self.Model] = nil
+	if self.Timer then
+		task.cancel(self.Timer)
+		self.Timer = nil
+	end
+	for _, connection in self.Connections do
+		connection:Disconnect()
+	end
+	table.clear(self.Connections)
+
+	if restore then
+		for _, state: ConstraintState in self.Constraints do
+			if state.Constraint.Parent then
+				state.Constraint.Enabled = false
+			end
+		end
+	end
+
+	self.Folder:Destroy()
+	for _, attachment in self.Attachments do
+		attachment:Destroy()
+	end
+
+	if restore then
+		Recover(self)
+		for _, state: JointState in self.Joints do
+			if state.Joint.Parent then
+				state.Joint.Enabled = state.Enabled
+			end
+		end
+		for _, state: ConstraintState in self.Constraints do
+			if state.Constraint.Parent then
+				if state.Constraint:IsA("BallSocketConstraint") then
+					state.Constraint.Restitution = state.Restitution
+					state.Constraint.MaxFrictionTorque = state.MaxFrictionTorque
+				end
+				state.Constraint.Enabled = state.Enabled
+			end
+		end
+		for _, state: PartState in self.Parts do
+			local part = state.Part
+			if part.Parent then
+				part.CanCollide = state.CanCollide
+				part.CanTouch = state.CanTouch
+				part.Massless = state.Massless
+				part.Anchored = state.Anchored
+			end
+		end
+		local humanoid = self.Humanoid
+		if humanoid.Parent then
+			local saved = self.HumanoidState
+			humanoid.BreakJointsOnDeath = saved.BreakJointsOnDeath
+			humanoid.RequiresNeck = saved.RequiresNeck
+			humanoid.AutoRotate = saved.AutoRotate
+			humanoid.PlatformStand = saved.PlatformStand
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, saved.GettingUp)
+			humanoid.EvaluateStateMachine = saved.EvaluateStateMachine
+			if humanoid.Health > 0 then
+				if saved.PlatformStand then
+					humanoid:ChangeState(Enum.HumanoidStateType.PlatformStanding)
+				elseif saved.State == Enum.HumanoidStateType.Physics then
+					humanoid:ChangeState(saved.State)
+				elseif saved.GettingUp then
+					humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+				else
+					humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+				end
+			end
+		end
+	end
+
+	table.clear(self.Attachments)
+	table.clear(self.Joints)
+	table.clear(self.Constraints)
+	table.clear(self.Parts)
+	self.Model = nil
+	self.Root = nil
+	self.Humanoid = nil
+	self.HumanoidState = nil
+	self.Folder = nil
+end
+
+function Ragdoll.Start(model: Model, velocity: Vector3?, options: Options?): Controller?
+	if typeof(model) ~= "Instance" or not model:IsA("Model") then
+		return nil
+	end
+	if Active[model] then
+		return Active[model]
+	end
+	local root = model:FindFirstChild("HumanoidRootPart")
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if not root or not root:IsA("BasePart") or not humanoid or model:FindFirstChild("RagdollConstraints") then
+		return nil
+	end
+	local duration = if options then options.Duration else nil
+	assert(duration == nil or (duration >= 0 and duration < math.huge), "Ragdoll Duration must be a finite non-negative number")
+	assert(velocity == nil or typeof(velocity) == "Vector3", "Ragdoll velocity must be a Vector3")
+
+	local body: { [BasePart]: boolean } = { [root] = true }
+	local names = if humanoid.RigType == Enum.HumanoidRigType.R6 then BodyNames.R6 else BodyNames.R15
+	for _, name in names do
+		local part = model:FindFirstChild(name)
+		if part and part:IsA("BasePart") then
+			body[part] = true
+		end
+	end
+	local descendants = model:GetDescendants()
+	local joints: { JointState } = {}
+	local pairsSeen: { [BasePart]: { [BasePart]: boolean } } = {}
+	local existing: { [BasePart]: { [BasePart]: BallSocketConstraint | HingeConstraint } } = {}
+	local collisionPairs: { [BasePart]: { [BasePart]: boolean } } = {}
+	for _, item in descendants do
+		if item:IsA("Motor6D") or item:IsA("AnimationConstraint") then
+			local part0, part1 = JointParts(item)
+			if part0 and part1 and part0 ~= part1 and body[part0] and body[part1] and item.Enabled then
+				table.insert(joints, { Joint = item, Enabled = item.Enabled })
+			end
+		end
+	end
+	if #joints == 0 then
+		return nil
+	end
+
+	local folder = Instance.new("Folder")
+	folder.Name = "RagdollConstraints"
+	local self = setmetatable({
+		Model = model,
+		Root = root,
+		Humanoid = humanoid,
+		Folder = folder,
+		Destroyed = false,
+		Joints = joints,
+		Constraints = {},
+		Attachments = {},
+		Parts = {},
+		Connections = {},
+		HumanoidState = {
+			EvaluateStateMachine = humanoid.EvaluateStateMachine,
+			BreakJointsOnDeath = humanoid.BreakJointsOnDeath,
+			RequiresNeck = humanoid.RequiresNeck,
+			AutoRotate = humanoid.AutoRotate,
+			PlatformStand = humanoid.PlatformStand,
+			GettingUp = humanoid:GetStateEnabled(Enum.HumanoidStateType.GettingUp),
+			State = humanoid:GetState(),
+		},
+	}, Controller)
+
+	local success, message = pcall(function()
+		humanoid.EvaluateStateMachine = false
+		humanoid.BreakJointsOnDeath = false
+		humanoid.RequiresNeck = false
+		humanoid.AutoRotate = false
+		humanoid.PlatformStand = true
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if animator then
+			for _, track in animator:GetPlayingAnimationTracks() do
+				track:Stop(0)
+			end
+		end
+
+		for _, item in descendants do
+			if item:IsA("BallSocketConstraint") or item:IsA("HingeConstraint") then
+				local part0, part1 = AttachmentPart(item.Attachment0), AttachmentPart(item.Attachment1)
+				if part0 and part1 and body[part0] and body[part1] then
+					table.insert(self.Constraints, {
+						Constraint = item, Enabled = item.Enabled,
+						Restitution = if item:IsA("BallSocketConstraint") then item.Restitution else nil,
+						MaxFrictionTorque = if item:IsA("BallSocketConstraint") then item.MaxFrictionTorque else nil,
+					})
+					existing[part0] = existing[part0] or {}
+					existing[part1] = existing[part1] or {}
+					existing[part0][part1], existing[part1][part0] = item, item
+					item.Enabled = false
+				end
+			elseif item:IsA("NoCollisionConstraint") and item.Enabled then
+				local part0, part1 = item.Part0, item.Part1
+				if part0 and part1 and body[part0] and body[part1] then
+					collisionPairs[part0] = collisionPairs[part0] or {}
+					collisionPairs[part1] = collisionPairs[part1] or {}
+					collisionPairs[part0][part1], collisionPairs[part1][part0] = true, true
+				end
+			end
+		end
+
+		for _, state in joints do
+			local joint = state.Joint
+			local part0, part1 = JointParts(joint)
+			if not part0 or not part1 then
+				continue
+			end
+			local linked = pairsSeen[part0]
+			if linked and linked[part1] then
+				continue
+			end
+			pairsSeen[part0] = linked or {}
+			pairsSeen[part1] = pairsSeen[part1] or {}
+			pairsSeen[part0][part1] = true
+			pairsSeen[part1][part0] = true
+			if part0 == root or part1 == root then
+				local weld = Instance.new("WeldConstraint")
+				weld.Name = "RagdollRoot"
+				weld.Part0 = part0
+				weld.Part1 = part1
+				weld.Parent = folder
+			else
+				local reusable = if existing[part0] then existing[part0][part1] else nil
+				if reusable then
+					if reusable:IsA("BallSocketConstraint") then
+						reusable.Restitution = 0
+						reusable.MaxFrictionTorque = 5
+					end
+					reusable.Enabled = true
+				else
+					local frame1 = if joint:IsA("Motor6D") then joint.C1 else part1.CFrame:ToObjectSpace(joint.Attachment1.WorldCFrame)
+					local attachment0, attachment1 = Instance.new("Attachment"), Instance.new("Attachment")
+					table.insert(self.Attachments, attachment0)
+					table.insert(self.Attachments, attachment1)
+					attachment0.Name, attachment1.Name = "RagdollAttachment", "RagdollAttachment"
+					attachment0.CFrame = part0.CFrame:ToObjectSpace(part1.CFrame * frame1)
+					attachment1.CFrame = frame1
+					attachment0.Parent, attachment1.Parent = part0, part1
+					local angle, twist = Limits(joint.Name)
+					local socket = Instance.new("BallSocketConstraint")
+					socket.Name = joint.Name .. "Ragdoll"
+					socket.Attachment0, socket.Attachment1 = attachment0, attachment1
+					socket.LimitsEnabled = true
+					socket.UpperAngle = angle
+					socket.TwistLimitsEnabled = true
+					socket.TwistLowerAngle, socket.TwistUpperAngle = -twist, twist
+					socket.MaxFrictionTorque = 5
+					socket.Restitution = 0
+					socket.Parent = folder
+				end
+				if collisionPairs[part0] and collisionPairs[part0][part1] then
+					continue
+				end
+				local noCollision = Instance.new("NoCollisionConstraint")
+				noCollision.Part0, noCollision.Part1 = part0, part1
+				noCollision.Parent = folder
+			end
+		end
+
+		folder.Parent = model
+		for _, state in joints do
+			state.Joint.Enabled = false
+		end
+		for _, item in descendants do
+			if item:IsA("BasePart") then
+				table.insert(self.Parts, {
+					Part = item, Anchored = item.Anchored, CanCollide = item.CanCollide,
+					CanTouch = item.CanTouch, Massless = item.Massless,
+				})
+				item.Anchored = false
+				item.CanCollide = body[item] == true and item ~= root
+				item.CanTouch = false
+				if item == root or not body[item] then
+					item.Massless = true
+				end
+			end
+		end
+		humanoid:ChangeState(if humanoid.Health > 0 then Enum.HumanoidStateType.Physics else Enum.HumanoidStateType.Dead)
+		if velocity then
+			local assemblies: { [BasePart]: boolean } = {}
+			for part in body do
+				local assembly = part.AssemblyRootPart or part
+				if not assemblies[assembly] then
+					assemblies[assembly] = true
+					assembly.AssemblyLinearVelocity = velocity
+				end
+			end
+		end
+	end)
+	if not success then
+		Finish(self, true)
+		warn("[Ragdoll] " .. tostring(message))
+		return nil
+	end
+
+	Active[model] = self
+	table.insert(self.Connections, model.Destroying:Connect(function()
+		Finish(self, false)
+	end))
+	table.insert(self.Connections, humanoid.Destroying:Connect(function()
+		Finish(self, false)
+	end))
+	table.insert(self.Connections, folder.Destroying:Connect(function()
+		Finish(self, true)
+	end))
+	if self.HumanoidState.EvaluateStateMachine then
+		table.insert(self.Connections, humanoid.HealthChanged:Connect(function(health: number)
+			if health <= 0 then
+				humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+			end
+		end))
+	end
+	if duration then
+		self.Timer = task.delay(duration, function()
+			self.Timer = nil
+			Finish(self, true)
+		end)
+	end
+	return self :: any
+end
+
+function Ragdoll.IsActive(model: Model): boolean
+	return Active[model] ~= nil
+end
+
+function Ragdoll.Stop(model: Model)
+	local controller = Active[model]
+	if controller then
+		Finish(controller, true)
+	end
+end
+
+function Controller:SetPivot(pivot: CFrame, alpha: number?)
+	if self.Destroyed or not self.Model.Parent then
+		return
+	end
+	self.Model:PivotTo(self.Model:GetPivot():Lerp(pivot, math.clamp(alpha or 1, 0, 1)))
+end
+
+function Controller:Stop()
+	Finish(self, true)
+end
+
+function Controller:Destroy()
+	Finish(self, true)
+end
+
+return Ragdoll

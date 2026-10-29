@@ -1,0 +1,268 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local Elements = ReplicatedStorage.SourceCode.Core.Ui.Elements
+local SlideFrame = require(Elements.SlideFrame)
+local Frame = require(Elements.Frame)
+local ImageLabel = require(Elements.ImageLabel)
+local TextLabel = require(Elements.TextLabel)
+local CustomButton = require(script.Parent.CustomButton)
+local MenuState = require(script.Parent.Parent.Sources.MenuState)
+local MenuLifecycle = require(script.Parent.Parent.MenuLifecycle)
+local VideChildrenHandler = require(ReplicatedStorage.SourceCode.Core.Utilities.VideChildrenHandler)
+
+export type Reactive<T> = T | (() -> T)
+export type Props = {
+	Id: string,
+	AlwaysMounted: boolean?,
+	DestroyDelay: number?,
+	Title: Reactive<string>?,
+	ParentId: string?,
+	Shown: Reactive<boolean>?,
+	Visible: Reactive<boolean>?,
+	Size: Reactive<UDim2>?,
+	MinSize: Vector2?,
+	AnchorPoint: Reactive<Vector2>?,
+	OnScreenPosition: UDim2?,
+	OffScreenPosition: UDim2?,
+	Period: number?,
+	Damping: number?,
+	BackgroundColor3: Reactive<Color3>?,
+	BackgroundTransparency: Reactive<number>?,
+	BackgroundProps: ImageLabel.Props?,
+	HeaderProps: ImageLabel.Props?,
+	TitleProps: TextLabel.Props?,
+	ContentProps: Frame.Props?,
+	CloseButtonProps: CustomButton.Props?,
+	ShowHeader: Reactive<boolean>?,
+	ShowCloseButton: Reactive<boolean>?,
+	HeaderSize: Reactive<UDim2>?,
+	HeaderPosition: Reactive<UDim2>?,
+	HeaderAnchorPoint: Reactive<Vector2>?,
+	ContentSize: Reactive<UDim2>?,
+	ContentPosition: Reactive<UDim2>?,
+	ContentAnchorPoint: Reactive<Vector2>?,
+	CloseButtonSize: Reactive<UDim2>?,
+	CloseButtonPosition: Reactive<UDim2>?,
+	CloseButtonAnchorPoint: Reactive<Vector2>?,
+	OnMenuOpen: (() -> ())?,
+	OnMenuClose: (() -> ())?,
+	BorderColor3: Reactive<Color3>?,
+	BorderSizePixel: Reactive<number>?,
+	BorderMode: Reactive<Enum.BorderMode>?,
+	ClipsDescendants: Reactive<boolean>?,
+	Rotation: Reactive<number>?,
+	LayoutOrder: Reactive<number>?,
+	ZIndex: Reactive<number>?,
+	Active: Reactive<boolean>?,
+	Interactable: Reactive<boolean>?,
+	Selectable: Reactive<boolean>?,
+	SelectionOrder: Reactive<number>?,
+	SelectionImageObject: Reactive<GuiObject>?,
+	SelectionGroup: Reactive<boolean>?,
+	SelectionBehaviorDown: Reactive<Enum.SelectionBehavior>?,
+	SelectionBehaviorLeft: Reactive<Enum.SelectionBehavior>?,
+	SelectionBehaviorRight: Reactive<Enum.SelectionBehavior>?,
+	SelectionBehaviorUp: Reactive<Enum.SelectionBehavior>?,
+	NextSelectionDown: Reactive<GuiObject>?,
+	NextSelectionLeft: Reactive<GuiObject>?,
+	NextSelectionRight: Reactive<GuiObject>?,
+	NextSelectionUp: Reactive<GuiObject>?,
+	AutoLocalize: Reactive<boolean>?,
+	RootLocalizationTable: Reactive<LocalizationTable>?,
+	Parent: Reactive<Instance>?,
+	Archivable: Reactive<boolean>?,
+	MouseEnter: ((x: number, y: number) -> ())?,
+	MouseLeave: ((x: number, y: number) -> ())?,
+	MouseMoved: ((x: number, y: number) -> ())?,
+	MouseWheelForward: ((x: number, y: number) -> ())?,
+	MouseWheelBackward: ((x: number, y: number) -> ())?,
+	InputBegan: ((input: InputObject) -> ())?,
+	InputChanged: ((input: InputObject) -> ())?,
+	InputEnded: ((input: InputObject) -> ())?,
+	SelectionGained: (() -> ())?,
+	SelectionLost: (() -> ())?,
+	SelectionChanged: ((amISelected: boolean, previousSelection: GuiObject?, newSelection: GuiObject?) -> ())?,
+	TouchTap: ((touchPositions: { Vector2 }) -> ())?,
+	TouchLongPress: ((touchPositions: { Vector2 }, state: Enum.UserInputState) -> ())?,
+	TouchPan: ((touchPositions: { Vector2 }, totalTranslation: Vector2, velocity: Vector2, state: Enum.UserInputState) -> ())?,
+	TouchPinch: ((touchPositions: { Vector2 }, scale: number, velocity: number, state: Enum.UserInputState) -> ())?,
+	TouchRotate: ((touchPositions: { Vector2 }, rotation: number, velocity: number, state: Enum.UserInputState) -> ())?,
+	TouchSwipe: ((swipeDirection: Enum.SwipeDirection, numberOfTouches: number) -> ())?,
+	Changed: ((property: string) -> ())?,
+	AttributeChanged: ((attribute: string) -> ())?,
+	AncestryChanged: ((child: Instance, parent: Instance?) -> ())?,
+	ChildAdded: ((child: Instance) -> ())?,
+	ChildRemoved: ((child: Instance) -> ())?,
+	DescendantAdded: ((descendant: Instance) -> ())?,
+	DescendantRemoving: ((descendant: Instance) -> ())?,
+	Destroying: (() -> ())?,
+	Children: any?,
+	[number]: any,
+}
+
+export type Defaults = {
+	Size: UDim2,
+	HeaderPosition: UDim2,
+	HeaderSize: UDim2,
+}
+
+local DefaultLayout: Defaults = {
+	Size = UDim2.fromOffset(1322, 773),
+	HeaderPosition = UDim2.fromScale(0.15, 0.02),
+	HeaderSize = UDim2.fromOffset(553, 153),
+}
+
+local function read(value: any): any
+	return if type(value) == "function" then value() else value
+end
+
+local function defaults(target: { [any]: any }, values: { [any]: any })
+	for key, value in values do
+		if target[key] == nil then target[key] = value end
+	end
+end
+
+return function(props: Props, layout: Defaults?): Frame
+	assert(typeof(props.Id) == "string" and props.Id ~= "", "Menu requires a non-empty Id")
+	assert(props.ParentId ~= props.Id, "ParentId must differ from Id")
+	if props.DestroyDelay ~= nil then
+		assert(typeof(props.DestroyDelay) == "number" and props.DestroyDelay >= 0 and props.DestroyDelay < math.huge, "DestroyDelay must be finite and non-negative")
+	end
+	if MenuLifecycle.Capture(props) then return nil :: any end
+	local preset = layout or DefaultLayout
+	local forwarded = VideChildrenHandler(props)
+	local contentProps: { [any]: any } = table.clone(props.ContentProps or {})
+
+	for key, value in forwarded do
+		if typeof(key) == "number" then
+			table.insert(contentProps, value)
+			forwarded[key] = nil
+		end
+	end
+	if props.Children ~= nil then table.insert(contentProps, props.Children) end
+
+	local shown = Vide.derive(function()
+		if read(props.Visible) == false then return false end
+		if props.Shown ~= nil then return read(props.Shown) == true end
+		return MenuState.openedMenu() == props.Id
+	end)
+	local wasOpen = false
+	Vide.effect(function()
+		local isOpen = shown()
+		if isOpen == wasOpen then return end
+		wasOpen = isOpen
+		local callback = if isOpen then props.OnMenuOpen else props.OnMenuClose
+		if callback then callback() end
+	end)
+	Vide.cleanup(function()
+		if not wasOpen then return end
+		wasOpen = false
+		if props.OnMenuClose then props.OnMenuClose() end
+	end)
+
+	local backgroundProps: { [any]: any } = table.clone(props.BackgroundProps or {})
+	local headerProps: { [any]: any } = table.clone(props.HeaderProps or {})
+	local titleProps: { [any]: any } = table.clone(props.TitleProps or {})
+	local closeProps: { [any]: any } = table.clone(props.CloseButtonProps or {})
+
+	defaults(contentProps, {
+		Name = "Content",
+		Size = props.ContentSize or UDim2.fromScale(0.92, 0.80),
+		Position = props.ContentPosition or UDim2.fromScale(0.5, 0.56),
+		AnchorPoint = props.ContentAnchorPoint or Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(194, 210, 218),
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
+		ZIndex = 2,
+	})
+	defaults(titleProps, {
+		Name = "Title",
+		Text = props.Title or props.Id,
+		Size = UDim2.fromScale(0.86, 0.74),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.new(1, 1, 1),
+		BackgroundColor3 = Color3.fromRGB(57, 91, 110),
+		BackgroundTransparency = 0,
+		Thickness = 3,
+		ZIndex = 5,
+	})
+	defaults(headerProps, {
+		Name = "Header",
+		Image = "",
+		Size = props.HeaderSize or preset.HeaderSize,
+		Position = props.HeaderPosition or preset.HeaderPosition,
+		AnchorPoint = props.HeaderAnchorPoint or Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(46, 74, 89),
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
+		ZIndex = 4,
+	})
+	local headerVisible = headerProps.Visible
+	headerProps.Visible = function()
+		return read(props.ShowHeader) ~= false and read(headerVisible) ~= false
+	end
+	table.insert(headerProps, TextLabel(titleProps))
+
+	defaults(closeProps, {
+		Name = "CloseButton",
+		Theme = "None",
+		Image = "",
+		Text = "X",
+		Size = props.CloseButtonSize or UDim2.fromOffset(150, 150),
+		Position = props.CloseButtonPosition or UDim2.fromScale(0.98, 0.02),
+		AnchorPoint = props.CloseButtonAnchorPoint or Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(190, 73, 70),
+		BackgroundTransparency = 0,
+		TextColor3 = Color3.new(1, 1, 1),
+		Thickness = 3,
+		UseHover = true,
+		Modal = true,
+		ZIndex = 6,
+	})
+	local closeVisible = closeProps.Visible
+	closeProps.Visible = function()
+		return read(props.ShowCloseButton) ~= false and read(closeVisible) ~= false
+	end
+	local activated = closeProps.Activated
+	closeProps.Activated = function(input: InputObject, count: number)
+		if MenuState.openedMenu() == props.Id then
+			MenuState.setOpenedMenu(props.ParentId)
+		end
+		if activated then activated(input, count) end
+	end
+
+	defaults(backgroundProps, {
+		Name = "Background",
+		Image = "",
+		Size = UDim2.fromScale(1, 1),
+		Position = UDim2.fromScale(0.5, 0.5),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(165, 186, 197),
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
+		ZIndex = 1,
+	})
+	table.insert(backgroundProps, Frame(contentProps))
+	table.insert(backgroundProps, ImageLabel(headerProps))
+	table.insert(backgroundProps, CustomButton(closeProps))
+	table.insert(forwarded, ImageLabel(backgroundProps))
+
+	forwarded.Name = props.Id
+	forwarded.Shown = shown
+	forwarded.MinSize = props.MinSize
+	forwarded.Size = props.Size or preset.Size
+	forwarded.AnchorPoint = props.AnchorPoint or Vector2.new(0.5, 0.5)
+	forwarded.OnScreenPosition = props.OnScreenPosition or UDim2.fromScale(0.5, 0.545)
+	forwarded.OffScreenPosition = props.OffScreenPosition or UDim2.fromScale(0.5, 1.5)
+	forwarded.Period = props.Period
+	forwarded.Damping = props.Damping
+	forwarded.BackgroundColor3 = props.BackgroundColor3 or Color3.fromRGB(113, 137, 151)
+	forwarded.BackgroundTransparency = if props.BackgroundTransparency ~= nil then props.BackgroundTransparency else 0
+	table.insert(forwarded, Vide.action(function(instance: Instance)
+		instance:SetAttribute("MenuId", props.Id)
+		instance:SetAttribute("ParentMenuId", props.ParentId)
+	end))
+	return SlideFrame(forwarded) :: Frame
+end

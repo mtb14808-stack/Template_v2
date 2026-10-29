@@ -1,0 +1,158 @@
+export type FormatNumber = {
+	Abbreviate: (value: number, decimals: number?) -> string,
+	Comma: (value: number) -> string,
+	Round: (value: number, decimals: number?) -> number,
+	Map: (value: number, inMin: number, inMax: number, outMin: number, outMax: number) -> number,
+}
+
+local SUFFIXES = {
+	"",
+	"K",
+	"M",
+	"B",
+	"T",
+	"Q",
+	"Qi",
+	"Sx",
+	"Sp",
+	"Oc",
+	"No",
+	"Dc",
+	"Ud",
+	"Dd",
+	"Td",
+	"Qad",
+	"Qid",
+	"Sxd",
+	"Spd",
+	"Ocd",
+	"Nod",
+	"Vg",
+	"Uvg",
+	"Dvg",
+	"Tvg",
+	"Qavg",
+	"Qivg",
+	"Sxvg",
+	"Spvg",
+	"Ocvg",
+	"Novg",
+	"Tg",
+	"Utg",
+	"Dtg",
+	"Ttg",
+	"Qatg",
+	"Qitg",
+	"Sxtg",
+	"Sptg",
+	"Octg",
+	"Notg",
+	"Qag",
+	"Uqag",
+	"Dqag",
+	"Tqag",
+	"Qaqag",
+	"Qiqag",
+	"Sxqag",
+	"Spqag",
+	"Ocqag",
+	"Noqag",
+	"Qig",
+	"Uqig",
+	"Dqig",
+	"Tqig",
+	"Qaqig",
+	"Qiqig",
+	"Sxqig",
+	"Spqig",
+	"Ocqig",
+	"Noqig",
+	"Sxg",
+	"Usxg",
+	"Dsxg",
+	"Tsxg",
+	"Qasxg",
+	"Qisxg",
+	"Sxsxg",
+	"Spsxg",
+	"Ocsxg",
+	"Nosxg",
+	"Spg",
+	"Uspg",
+	"Dspg",
+	"Tspg",
+	"Qaspg",
+	"Qispg",
+	"Sxspg",
+	"Spspg",
+	"Ocspg",
+	"Nospg",
+	"Ocg",
+	"Uocg",
+	"Docg",
+	"Tocg",
+	"Qaocg",
+	"Qiocg",
+	"Sxocg",
+	"Spocg",
+	"Ococg",
+	"Noocg",
+	"Nog",
+	"Unog",
+	"Dnog",
+	"Tnog",
+	"Qanog",
+	"Qinog",
+	"Sxnog",
+	"Spnog",
+	"Ocnog",
+	"Nonog",
+	"Ct",
+}
+
+local function FormatDecimals(value: number, decimals: number): string
+	local formatted = string.format("%." .. decimals .. "f", value)
+	formatted = formatted:gsub("%.[0]+$", "")
+	return if formatted == "-0" then "0" else formatted
+end
+
+return {
+	Abbreviate = function(value: number, decimals: number?): string
+		local precision = if decimals == nil then 2 else decimals
+		assert(precision >= 0 and precision < math.huge, "Decimals must be finite and non-negative")
+		precision = math.min(math.floor(precision), 15)
+		if value ~= value then return "NaN" end
+		local absolute = math.abs(value)
+		if absolute >= 1e303 then return "INF" end
+		if absolute < 1000 then return FormatDecimals(value, precision) end
+
+		local exponent = math.floor(math.log10(absolute) / 3)
+		local base = value / (10 ^ (exponent * 3))
+		local formatted = FormatDecimals(base, precision)
+		if math.abs(tonumber(formatted) or 0) >= 1000 then
+			exponent += 1
+			formatted = FormatDecimals(base / 1000, precision)
+		end
+		local suffix = SUFFIXES[exponent + 1]
+		return if suffix then formatted .. suffix else "INF"
+	end,
+
+	Comma = function(value: number): string
+		if math.abs(value) >= 1e303 then return "INF" end
+		local formatted = tostring(math.floor(value))
+		local count: number
+		repeat
+			formatted, count = string.gsub(formatted, "^(-?%d+)(%d%d%d)", "%1,%2")
+		until count == 0
+		return formatted
+	end,
+
+	Round = function(value: number, decimals: number?): number
+		local mult = 10 ^ (decimals or 0)
+		return math.floor(value * mult + 0.5) / mult
+	end,
+
+	Map = function(value: number, inMin: number, inMax: number, outMin: number, outMax: number): number
+		return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin)
+	end,
+} :: FormatNumber

@@ -1,0 +1,190 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local PngIds = require(ReplicatedStorage.SourceCode.Core.Configs.AssetsId.PngIds)
+local Frame = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.Frame)
+local ImageLabel = require(ReplicatedStorage.SourceCode.Core.Ui.Elements.ImageLabel)
+local Spring = require(ReplicatedStorage.SourceCode.Core.Ui.Utils.Spring)
+local TextSizing = require(ReplicatedStorage.SourceCode.Core.Ui.Utils.TextSizing)
+local ViewPortSizeSource = require(ReplicatedStorage.SourceCode.Core.Ui.Sources.ViewPortSizeSource)
+
+export type Args = {
+	Trigger: () -> boolean,
+	Visible: () -> boolean,
+	Parent: () -> GuiObject,
+	Direction: () -> string,
+}
+
+local BounceDuration = 0.25
+local BounceDistance = 35
+local IndicatorRawSize = PngIds.Indicator.Size or UDim2.fromOffset(83, 99)
+local IndicatorSize = UDim2.fromOffset(IndicatorRawSize.X.Offset * 1.5, IndicatorRawSize.Y.Offset * 1.5)
+local Margin = 20
+
+local function GetRotation(direction: string): number
+	local rotations = {
+		Bottom = 0,
+		Down = 0,
+		Top = 180,
+		Up = 180,
+		Left = 90,
+		Right = -90,
+	}
+	return rotations[direction] or 0
+end
+
+local function GetBasePosition(direction: string, size: Vector2, margin: number): UDim2
+	if direction == "Top" or direction == "Up" then
+		return UDim2.new(0.5, 0, 0, -(size.Y / 2) - margin)
+	elseif direction == "Bottom" or direction == "Down" then
+		return UDim2.new(0.5, 0, 1, (size.Y / 2) + margin)
+	elseif direction == "Left" then
+		return UDim2.new(0, -(size.X / 2) - margin, 0.5, 0)
+	elseif direction == "Right" then
+		return UDim2.new(1, (size.X / 2) + margin, 0.5, 0)
+	end
+	return UDim2.new(0.5, 0, 0.5, 0)
+end
+
+local function GetBackwardOffset(direction: string, dist: number): UDim2
+	if direction == "Top" or direction == "Up" then
+		return UDim2.fromOffset(0, -dist)
+	elseif direction == "Bottom" or direction == "Down" then
+		return UDim2.fromOffset(0, dist)
+	elseif direction == "Left" then
+		return UDim2.fromOffset(-dist, 0)
+	elseif direction == "Right" then
+		return UDim2.fromOffset(dist, 0)
+	end
+	return UDim2.new()
+end
+
+return function(Args: Args)
+	return Vide.show(function()
+		return Args.Trigger() and Args.Visible() and Args.Parent() ~= nil
+	end, function()
+		local TargetPositionSource = Vide.source(Vector2.zero)
+		local TargetSizeSource = Vide.source(Vector2.zero)
+
+		local OverlayPositionSource = Vide.source(Vector2.zero)
+		local OverlayScaleSource = Vide.source(1)
+
+		Vide.effect(function()
+			local target = Args.Parent()
+			local function refresh()
+				TargetPositionSource(target.AbsolutePosition)
+				TargetSizeSource(target.AbsoluteSize)
+			end
+			local positionConnection = target:GetPropertyChangedSignal("AbsolutePosition"):Connect(refresh)
+			local sizeConnection = target:GetPropertyChangedSignal("AbsoluteSize"):Connect(refresh)
+			local ancestryConnection = target.AncestryChanged:Connect(refresh)
+			Vide.cleanup(function()
+				positionConnection:Disconnect()
+				sizeConnection:Disconnect()
+				ancestryConnection:Disconnect()
+			end)
+			refresh()
+		end)
+
+		local TargetOffsetSource = Vide.source(0)
+		local BounceSpring = Spring.NormalSpring(function()
+			return TargetOffsetSource()
+		end, 0, 1, 0.5)
+
+		local Thread = task.spawn(function()
+			while true do
+				if Args.Visible() == false then
+					task.wait(0.15)
+				else
+					TargetOffsetSource(1)
+					task.wait(BounceDuration)
+					if Args.Visible() == false then
+						break
+					end
+					TargetOffsetSource(0)
+					task.wait(BounceDuration)
+				end
+			end
+		end)
+
+		Vide.cleanup(function()
+			if Thread then
+				task.cancel(Thread)
+			end
+		end)
+
+		local DriveProps = Vide.derive(function()
+			local dir = Args.Direction()
+			local viewport = ViewPortSizeSource()
+			local scale = math.min(viewport.X / 1920, viewport.Y / 1080)
+			local sizeVector = Vector2.new(IndicatorSize.X.Offset, IndicatorSize.Y.Offset) * scale
+			local basePos = GetBasePosition(dir, sizeVector, Margin * scale)
+			local offset = GetBackwardOffset(dir, BounceSpring() * BounceDistance * scale)
+			local size = TargetSizeSource()
+			local absolutePosition = TargetPositionSource() + Vector2.new(
+				size.X * basePos.X.Scale + basePos.X.Offset + offset.X.Offset,
+				size.Y * basePos.Y.Scale + basePos.Y.Offset + offset.Y.Offset
+			)
+			local parentScale = math.max(OverlayScaleSource(), 0.0001)
+			local localPosition = (absolutePosition - OverlayPositionSource()) / parentScale
+
+			return {
+				Visible = Args.Visible(),
+				Rotation = GetRotation(dir),
+				Position = UDim2.fromOffset(localPosition.X, localPosition.Y),
+				Size = UDim2.fromOffset(sizeVector.X / parentScale, sizeVector.Y / parentScale),
+			}
+		end)
+
+		return Frame({
+			ZIndex = 100,
+			Name = "IndicatorContainer",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = function()
+				return DriveProps().Position
+			end,
+			Rotation = function()
+				return DriveProps().Rotation
+			end,
+			Visible = function()
+				return DriveProps().Visible
+			end,
+			Size = function()
+				return DriveProps().Size
+			end,
+			Vide.action(function(instance: Instance)
+				local parentConnections: { RBXScriptConnection } = {}
+				local function bindParent()
+					for _, connection in ipairs(parentConnections) do
+						connection:Disconnect()
+					end
+					table.clear(parentConnections)
+					local parent = instance.Parent
+					local function refresh()
+						if parent and parent:IsA("GuiBase2d") then
+							OverlayPositionSource(parent.AbsolutePosition)
+							OverlayScaleSource(TextSizing.GetScale(parent))
+						end
+					end
+					if parent and parent:IsA("GuiBase2d") then
+						table.insert(parentConnections, parent:GetPropertyChangedSignal("AbsolutePosition"):Connect(refresh))
+						table.insert(parentConnections, parent:GetPropertyChangedSignal("AbsoluteSize"):Connect(refresh))
+					end
+					refresh()
+				end
+				local ancestryConnection = instance.AncestryChanged:Connect(bindParent)
+				Vide.cleanup(function()
+					ancestryConnection:Disconnect()
+					for _, connection in ipairs(parentConnections) do
+						connection:Disconnect()
+					end
+				end)
+				bindParent()
+			end),
+			ImageLabel({
+				Name = "Indicator",
+				Image = PngIds.Indicator.Image,
+				Size = UDim2.fromScale(1, 1),
+			}),
+		})
+	end)
+end

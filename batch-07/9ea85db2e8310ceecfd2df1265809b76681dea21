@@ -1,0 +1,76 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local MenuState = require(script.Parent.Sources.MenuState)
+local MenuLifecycle = require(script.Parent.MenuLifecycle)
+local Features = ReplicatedStorage.SourceCode.Features
+
+type Definition = {
+	Render: (present: () -> boolean) -> any,
+	AlwaysMounted: boolean,
+	DestroyDelay: number,
+	IsShown: () -> boolean,
+}
+
+local function isMenuComponent(moduleScript: ModuleScript): boolean
+	if not moduleScript.Name:match("Menu$") or moduleScript.Name:find("Root") then return false end
+	local parent = moduleScript.Parent
+	while parent and parent ~= Features do
+		if parent.Name == "Components" then return false end
+		parent = parent.Parent
+	end
+	return true
+end
+
+return function()
+	local definitions: { [string]: Definition } = {}
+	local function register(id: string, definition: Definition)
+		assert(not definitions[id], "Duplicate menu Id: " .. id)
+		assert(definition.DestroyDelay >= 0 and definition.DestroyDelay < math.huge, "DestroyDelay must be finite and non-negative")
+		definitions[id] = definition
+		if definition.AlwaysMounted then
+			Vide.cleanup(MenuState.registerAlwaysMounted(id))
+		end
+	end
+
+	for _, descendant in Features:GetDescendants() do
+		if not descendant:IsA("ModuleScript") or descendant:IsDescendantOf(script.Parent)
+			or descendant.Name:find("%.story") then continue end
+		local success, component = pcall(require, descendant)
+		if not success then
+			warn("[MenuRoot] " .. descendant:GetFullName() .. ": " .. tostring(component))
+			continue
+		end
+		if type(component) == "function" and isMenuComponent(descendant) then
+			local described, definition = pcall(MenuLifecycle.Describe, component)
+			if not described then
+				warn("[MenuRoot] " .. descendant:GetFullName() .. ": " .. tostring(definition))
+				continue
+			end
+			register(definition.Id, {
+				Render = function(_present) return component() end,
+				AlwaysMounted = definition.AlwaysMounted,
+				DestroyDelay = definition.DestroyDelay,
+				IsShown = definition.IsShown,
+			})
+		elseif type(component) == "table" and typeof(component.menuId) == "string" and type(component.Component) == "function" then
+			local id = component.menuId
+			register(id, {
+				Render = function(present) return component.Component({ present = present }) end,
+				AlwaysMounted = component.alwaysMounted == true,
+				DestroyDelay = if component.destroyDelay ~= nil then component.destroyDelay else 0.35,
+				IsShown = function() return MenuState.openedMenu() == id end,
+			})
+		end
+	end
+
+	return Vide.indexes(function()
+		local active: { [string]: string } = {}
+		for id, definition in definitions do
+			if definition.AlwaysMounted or definition.IsShown() then active[id] = id end
+		end
+		return active
+	end, function(_id: () -> string, key: string, present: () -> boolean)
+		local definition = definitions[key]
+		return definition.Render(present), definition.DestroyDelay
+	end)
+end

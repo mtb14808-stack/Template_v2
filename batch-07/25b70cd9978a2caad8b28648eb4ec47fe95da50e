@@ -1,0 +1,109 @@
+--!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local Hover = require(script.Parent.Hover)
+
+local optionNames = {
+	"UseHover", "HoverMult", "HoverOptions", "MouseEnterHover", "MouseLeaveHover", "MouseButton1DownHover", "MouseButton1UpHover",
+}
+
+return function(target: { [any]: any }, options: { [any]: any }): { [any]: any }
+	for _, name in ipairs(optionNames) do
+		target[name] = nil
+	end
+	if options.UseHover ~= true then
+		return target
+	end
+
+	local hoverOptions = table.clone(options.HoverOptions or {})
+	for field, option in {
+		hoverMult = "HoverMult",
+		MouseEnter = "MouseEnterHover",
+		MouseLeave = "MouseLeaveHover",
+		MouseButton1Down = "MouseButton1DownHover",
+		MouseButton1Up = "MouseButton1UpHover",
+	} do
+		if options[option] ~= nil then hoverOptions[field] = options[option] end
+	end
+
+	table.insert(target, Vide.action(function(instance: Instance)
+		local gui = instance :: GuiObject
+		local animation = Hover(hoverOptions)({})
+		local connections: { RBXScriptConnection } = {}
+		local hoverScale = animation[1] :: UIScale
+		hoverScale.Name = "HoverScale"
+		local existingScale = gui:FindFirstChildOfClass("UIScale")
+		local baseScale = if existingScale then existingScale.Scale else 1
+		local lastScale: number? = nil
+		local writingScale = false
+
+		local function connect(signal: RBXScriptSignal, callback: any)
+			if callback then
+				table.insert(connections, signal:Connect(callback))
+			end
+		end
+
+		connect(gui.MouseEnter, animation.MouseEnter)
+		connect(gui.MouseLeave, animation.MouseLeave)
+
+		local inputTarget = gui
+		if not gui:IsA("GuiButton") then
+			local main = gui:FindFirstChild("MainButton") or gui:FindFirstChild("MainLabel") or gui:FindFirstChild("PrefixText")
+			if main and main:IsA("GuiObject") then
+				inputTarget = main
+			end
+		end
+		if inputTarget:IsA("GuiButton") then
+			connect(inputTarget.MouseButton1Down, animation.MouseButton1Down)
+			connect(inputTarget.MouseButton1Up, animation.MouseButton1Up)
+		else
+			if animation.MouseButton1Down then
+				connect(inputTarget.InputBegan, function(input: InputObject)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+						animation.MouseButton1Down(input.Position.X, input.Position.Y)
+					end
+				end)
+			end
+			if animation.MouseButton1Up then
+				connect(inputTarget.InputEnded, function(input: InputObject)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+						animation.MouseButton1Up(input.Position.X, input.Position.Y)
+					end
+				end)
+			end
+		end
+
+		local function updateScale()
+			if existingScale then
+				writingScale = true
+				existingScale.Scale = baseScale * hoverScale.Scale
+				lastScale = existingScale.Scale
+				writingScale = false
+			end
+		end
+		if existingScale then
+			connect(existingScale:GetPropertyChangedSignal("Scale"), function()
+				if not writingScale and existingScale.Scale ~= lastScale then
+					baseScale = existingScale.Scale
+					updateScale()
+				end
+			end)
+			connect(hoverScale:GetPropertyChangedSignal("Scale"), updateScale)
+			updateScale()
+		else
+			hoverScale.Parent = gui
+		end
+
+		Vide.cleanup(function()
+			for _, connection in ipairs(connections) do
+				connection:Disconnect()
+			end
+			if existingScale and existingScale.Parent == gui and existingScale.Scale == lastScale then
+				existingScale.Scale = baseScale
+			end
+			hoverScale:Destroy()
+		end)
+	end))
+
+	return target
+end

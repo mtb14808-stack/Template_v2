@@ -1,0 +1,320 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextService = game:GetService("TextService")
+local Vide = require(ReplicatedStorage.Packages.Vide)
+
+local function read(value: any): any
+	return if type(value) == "function" then value() else value
+end
+
+local function getScale(gui: Instance): number
+	local scale = 1
+	local ancestor: Instance? = gui
+	while ancestor do
+		local uiScale = ancestor:FindFirstChildOfClass("UIScale")
+		if uiScale then
+			scale *= uiScale.Scale
+		end
+		ancestor = ancestor.Parent
+	end
+	return math.max(scale, 0.0001)
+end
+
+return {
+	GetScale = function(gui: Instance): number
+		return getScale(gui)
+	end,
+	Apply = function(props: { [any]: any })
+		return Vide.action(function(instance: Instance)
+			local text = instance :: TextLabel | TextButton
+			local alive = true
+			local queued = false
+			local writing = false
+			local pendingUpdate: thread? = nil
+			local revision = 0
+			local connections = {}
+			local childConnections = {}
+			local adjusted = {}
+			local lastKey: string? = nil
+			local lastFit = 100
+			local nativeKey: string? = nil
+			local boost = 1
+			local sizingScale: UIScale? = nil
+			local ownsScale = false
+			local baseScale = 1
+			local writtenScale: number? = nil
+			local originalSize = text.Size
+			local writtenSize: UDim2? = nil
+			local schedule: () -> ()
+
+			local function adjustedSize(): UDim2
+				local parent = text.Parent
+				local parentSize = if parent and parent:IsA("GuiBase2d")
+					then parent.AbsoluteSize / getScale(parent) else Vector2.zero
+				local x, y = originalSize.X.Offset / boost, originalSize.Y.Offset / boost
+				local offsetX, offsetY = math.floor(x), math.floor(y)
+				return UDim2.new(
+					originalSize.X.Scale / boost + (if parentSize.X > 0 then (x - offsetX) / parentSize.X else 0), offsetX,
+					originalSize.Y.Scale / boost + (if parentSize.Y > 0 then (y - offsetY) / parentSize.Y else 0), offsetY
+				)
+			end
+
+			local function adjustProperty(record)
+				if record.AppliedBoost == boost and record.AppliedValue == record.Value
+					and record.Object[record.Property] == record.Written then return end
+				local value = record.Value
+				local result = if typeof(value) == "UDim"
+					then UDim.new(value.Scale, value.Offset / boost)
+					else value / boost
+				record.Written = result
+				record.Writing = true
+				record.Object[record.Property] = result
+				record.Written = record.Object[record.Property]
+				record.AppliedBoost = boost
+				record.AppliedValue = record.Value
+				record.Writing = false
+			end
+
+			local function applyBoost(value: number)
+				writing = true
+				if value ~= boost then
+					if value > 1 and not sizingScale then
+						sizingScale = text:FindFirstChildOfClass("UIScale")
+						if sizingScale then
+							baseScale = sizingScale.Scale
+						else
+							sizingScale = Instance.new("UIScale")
+							sizingScale.Name = "TextRenderScale"
+							ownsScale = true
+							sizingScale.Parent = text
+						end
+						table.insert(connections, sizingScale:GetPropertyChangedSignal("Scale"):Connect(function()
+							if not writing and sizingScale and (writtenScale == nil or math.abs(sizingScale.Scale - writtenScale) > 0.00001) then
+								baseScale = if sizingScale.Name == "HoverScale" then sizingScale.Scale else sizingScale.Scale / boost
+								schedule()
+							end
+						end))
+					end
+					boost = value
+					writtenSize = adjustedSize()
+					if text.Size ~= writtenSize then text.Size = writtenSize end
+				end
+				if sizingScale then
+					writtenScale = baseScale * boost
+					if math.abs(sizingScale.Scale - writtenScale) > 0.00001 then
+						sizingScale.Scale = writtenScale
+					end
+					writtenScale = sizingScale.Scale
+				end
+				if boost > 1 then
+					writtenSize = adjustedSize()
+					if text.Size ~= writtenSize then text.Size = writtenSize end
+				end
+				for _, record in adjusted do adjustProperty(record) end
+				writing = false
+			end
+
+			local function useFit(fitted: number, scale: number)
+				local useNative = fitted * scale <= 100
+				applyBoost(if useNative then 1 else math.max(1, fitted / 100))
+				text.TextScaled = useNative
+				if not useNative then text.TextSize = fitted / boost end
+			end
+
+			local function update()
+				pendingUpdate = nil
+				queued = false
+				if not alive then return end
+				applyBoost(boost)
+				local ticket = revision
+				if read(props.TextScaled) == false then
+					applyBoost(1)
+					lastKey = nil
+					nativeKey = nil
+					text.TextScaled = false
+					text.TextSize = read(props.TextSize) or 14
+					text.TextWrapped = read(props.TextWrapped) or false
+					return
+				end
+
+				text.TextWrapped = true
+				local scale = getScale(text) / boost
+				local size = text.AbsoluteSize / scale
+				local padding = text:FindFirstChildOfClass("UIPadding")
+				if padding then
+					local function paddingValue(property: string): UDim
+						local record = adjusted[property]
+						return if record and record.Object == padding then record.Value else padding[property]
+					end
+					local left, right = paddingValue("PaddingLeft"), paddingValue("PaddingRight")
+					local top, bottom = paddingValue("PaddingTop"), paddingValue("PaddingBottom")
+					size = Vector2.new(
+						size.X * (1 - left.Scale - right.Scale) - left.Offset - right.Offset,
+						size.Y * (1 - top.Scale - bottom.Scale) - top.Offset - bottom.Offset
+					)
+				end
+				if text.Text == "" or size.X <= 0 or size.Y <= 0 or size.Y * scale <= 100 then
+					applyBoost(1)
+					text.TextScaled = true
+					return
+				end
+
+				local constraint = text:FindFirstChildOfClass("UITextSizeConstraint")
+				local minimum = if constraint then math.max(1, constraint.MinTextSize) else 1
+				local maximum = if constraint then math.max(minimum, constraint.MaxTextSize)
+					else math.max(100, math.ceil(size.Y * 2))
+				local key = string.format("%s|%s|%s|%s|%s|%.1f|%.1f|%g|%g|%g",
+					text.Text, text.FontFace.Family, text.FontFace.Weight.Name, text.FontFace.Style.Name,
+					tostring(text.RichText), size.X, size.Y, text.LineHeight, minimum, maximum)
+				if key == lastKey then
+					useFit(lastFit, scale)
+					return
+				end
+				local screenKey = key .. string.format("|%.4f", scale)
+				if screenKey == nativeKey then
+					applyBoost(1)
+					text.TextScaled = true
+					return
+				end
+
+				local params = Instance.new("GetTextBoundsParams")
+				params.Text = text.Text
+				params.Font = text.FontFace
+				params.RichText = text.RichText
+				params.Width = size.X * scale
+				local lineHeight = text.LineHeight
+				local success, fitted = pcall(function(): number
+					params.Size = 100
+					local screenBounds = TextService:GetTextBoundsAsync(params)
+					local screenLines = math.max(1, math.round(screenBounds.Y / 100))
+					local screenHeight = screenBounds.Y + (screenLines - 1) * 100 * (lineHeight - 1)
+					if screenBounds.X > size.X * scale or screenHeight > size.Y * scale then return 0 end
+					params.Width = size.X
+					local low, high = minimum, maximum
+					local best = minimum
+					while low <= high do
+						local candidate = math.floor((low + high) / 2)
+						local measurementScale = math.max(1, candidate / 100)
+						params.Size = candidate / measurementScale
+						params.Width = size.X / measurementScale
+						local bounds = TextService:GetTextBoundsAsync(params)
+						bounds *= measurementScale
+						local lines = math.max(1, math.round(bounds.Y / candidate))
+						local height = bounds.Y + (lines - 1) * candidate * (lineHeight - 1)
+						if bounds.X <= size.X and height <= size.Y then
+							best = candidate
+							low = candidate + 1
+						else
+							high = candidate - 1
+						end
+					end
+					return best
+				end)
+				params:Destroy()
+				if alive and ticket == revision then
+					if success and fitted > 0 then
+						lastKey = key
+						lastFit = fitted
+						useFit(fitted, scale)
+					else
+						if success then nativeKey = screenKey end
+						applyBoost(1)
+						text.TextScaled = true
+					end
+				end
+			end
+
+			schedule = function()
+				if not alive or writing then return end
+				revision += 1
+				if not queued then
+					queued = true
+					pendingUpdate = task.delay(0, update)
+				end
+			end
+
+			table.insert(connections, text:GetPropertyChangedSignal("Size"):Connect(function()
+				if not writing and text.Size ~= writtenSize then
+					originalSize = text.Size
+					schedule()
+				end
+			end))
+			for _, property in { "AbsoluteSize", "Text", "FontFace", "RichText", "LineHeight" } do
+				table.insert(connections, text:GetPropertyChangedSignal(property):Connect(schedule))
+			end
+			table.insert(connections, text.AncestryChanged:Connect(schedule))
+
+			local function watchChild(child: Instance)
+				if childConnections[child] then return end
+				if child:IsA("UITextSizeConstraint") then
+					childConnections[child] = child.Changed:Connect(schedule)
+				elseif child:IsA("UIPadding") or child:IsA("UIStroke") then
+					local properties = if child:IsA("UIPadding")
+						then { "PaddingLeft", "PaddingRight", "PaddingTop", "PaddingBottom" }
+						else { "Thickness" }
+					local records = {}
+					for _, property in properties do
+						local record = { Object = child, Property = property, Value = (child :: any)[property] }
+						adjusted[if property == "Thickness" then child else property] = record
+						records[property] = record
+						adjustProperty(record)
+					end
+					childConnections[child] = child.Changed:Connect(function(property)
+						local record = records[property]
+						if record and not writing and not record.Writing and (child :: any)[property] ~= record.Written then
+							record.Value = (child :: any)[property]
+							schedule()
+						end
+					end)
+				else
+					return
+				end
+				lastKey = nil
+				nativeKey = nil
+				schedule()
+			end
+
+			for _, child in text:GetChildren() do watchChild(child) end
+			table.insert(connections, text.ChildAdded:Connect(watchChild))
+			table.insert(connections, text.ChildRemoved:Connect(function(child)
+				local connection = childConnections[child]
+				if connection then
+					connection:Disconnect()
+					childConnections[child] = nil
+					for key, record in adjusted do
+						if record.Object == child then
+							(child :: any)[record.Property] = record.Value
+							adjusted[key] = nil
+						end
+					end
+					lastKey = nil
+					nativeKey = nil
+					schedule()
+				end
+			end))
+			Vide.cleanup(function()
+				alive = false
+				if pendingUpdate then
+					task.cancel(pendingUpdate)
+					pendingUpdate = nil
+				end
+				for _, connection in connections do connection:Disconnect() end
+				for _, connection in childConnections do connection:Disconnect() end
+				if text.Parent then
+					applyBoost(1)
+				end
+				if ownsScale and sizingScale then sizingScale:Destroy() end
+				table.clear(adjusted)
+				table.clear(childConnections)
+				table.clear(connections)
+			end)
+			Vide.effect(function()
+				read(props.TextScaled)
+				read(props.TextSize)
+				read(props.TextWrapped)
+				lastKey = nil
+				nativeKey = nil
+				schedule()
+			end)
+		end)
+	end,
+}

@@ -1,0 +1,31 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ConfettiComponent = require(script.ConfettiComponent)
+local Vide = require(ReplicatedStorage.Packages.Vide)
+local Sound = require(ReplicatedStorage.SourceCode.Core.Utilities.Sound)
+
+Sound.Preload({ "Confetti1", "Confetti2" })
+
+local TriggerSource = Vide.source(0)
+local TypeSource = Vide.source("")
+local CountSource = Vide.source(0)
+
+return {
+	Fire = function(Type: "UpRain" | "BottomCorner", Count: number)
+		if (Type ~= "UpRain" and Type ~= "BottomCorner") or Count <= 0 then
+			return
+		end
+		CountSource(Count)
+		TypeSource(Type)
+		TriggerSource(TriggerSource() + 1)
+		Sound.Play2DSound("Confetti1")
+		Sound.Play2DSound("Confetti2")
+	end,
+	Component = function()
+		return ConfettiComponent({
+			Trigger = TriggerSource,
+			Type = TypeSource,
+			Count = CountSource,
+			ZIndex = 10,
+		})
+	end,
+}
