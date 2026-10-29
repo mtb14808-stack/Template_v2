@@ -1,0 +1,22 @@
+Archivio reference Roblox
+
+Apri Gallery.html per sfogliare e cercare i giochi.
+index.json contiene nomi, rank, giocatori, URL, universe/place ID, asset ID e percorsi locali.
+
+Classifica: primi 1000 per giocatori simultanei nella lista pubblica Rolimons, non una classifica globale ufficiale esaustiva.
+Snapshot: 2026-10-28T17:28:52.246Z
+Fonte: https://api.rolimons.com/games/v1/gamelist
+Thumbnail: Roblox, PNG 768x432, fino a 10 thumbnail pubbliche restituite per gioco. Non comprende tutte le varianti storiche o private.
+Analisi visiva automatica delle immagini non eseguita.
+Le immagini appartengono ai rispettivi titolari; questo archivio raccoglie riferimenti.
+
+{
+  "rankedGames": 1000,
+  "uniqueUniverses": 1000,
+  "gamesWithImages": 984,
+  "downloadedImages": 4952,
+  "missingImages": 0,
+  "gamesWithoutMetadata": 0
+}
+
+Verifica file: 4952 PNG validi; 2100.3 MiB. Dimensione richiesta 768x432; Roblox puo restituire dimensioni leggermente diverse: mantenuti gli originali. Dimensioni effettive in index.json.
