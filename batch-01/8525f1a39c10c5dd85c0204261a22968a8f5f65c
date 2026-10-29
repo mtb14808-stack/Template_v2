@@ -1,0 +1,5 @@
+{
+    "luau-lsp.studioPlugin.enabled": true,
+    "luau-lsp.completion.fillCallArguments": false,
+    "luau-lsp.completion.showDeprecatedItems": false
+}

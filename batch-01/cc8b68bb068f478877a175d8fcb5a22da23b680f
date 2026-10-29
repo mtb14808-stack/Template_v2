@@ -1,0 +1,8 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Cast = require(ReplicatedStorage.Packages._Index.RayCast.Cast)
+
+export type FilterType = Cast.FilterType
+export type CastFilter = Cast.CastFilter
+export type BoundsFilter = Cast.BoundsFilter
+
+return Cast

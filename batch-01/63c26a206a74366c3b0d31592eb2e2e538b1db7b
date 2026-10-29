@@ -1,0 +1,76 @@
+local WorkspaceService = game:GetService("Workspace")
+local Visualize = require(script.Parent.Visualize)
+local DEBUG_FOLDER_NAME = "RayCastDebug"
+
+export type FilterType = string | Enum.RaycastFilterType
+export type CastFilter = { Instance } | RaycastParams
+export type BoundsFilter = { Instance } | OverlapParams
+
+local function ResolveFilterType(filterType: FilterType?): Enum.RaycastFilterType
+	if filterType == Enum.RaycastFilterType.Include or filterType == "Include" or filterType == "Whitelist" then
+		return Enum.RaycastFilterType.Include
+	end
+	return Enum.RaycastFilterType.Exclude
+end
+
+local function FilterList(list: { Instance }?, filterType: Enum.RaycastFilterType): { Instance }
+	local result = if list then table.clone(list) else {}
+	local debugFolder = WorkspaceService:FindFirstChild(DEBUG_FOLDER_NAME)
+	if debugFolder and filterType == Enum.RaycastFilterType.Exclude then
+		table.insert(result, debugFolder)
+	end
+	return result
+end
+
+local function GetSafeParams(list: CastFilter?, filterType: FilterType?): RaycastParams
+	if typeof(list) == "RaycastParams" then return list end
+	local params = RaycastParams.new()
+	params.FilterType = ResolveFilterType(filterType)
+	params.FilterDescendantsInstances = FilterList(list, params.FilterType)
+	return params
+end
+
+local function GetOverlapParams(list: BoundsFilter?, filterType: FilterType?): OverlapParams
+	if typeof(list) == "OverlapParams" then return list end
+	local params = OverlapParams.new()
+	params.FilterType = ResolveFilterType(filterType)
+	params.FilterDescendantsInstances = FilterList(list, params.FilterType)
+	return params
+end
+
+return {
+	RayCast = function(Origin: Vector3, Direction: Vector3, List: CastFilter?, Type: FilterType?, Debug: boolean?): RaycastResult?
+		if typeof(Origin) ~= "Vector3" or typeof(Direction) ~= "Vector3" then return nil end
+		local result = WorkspaceService:Raycast(Origin, Direction, GetSafeParams(List, Type))
+		if Debug then Visualize.VisualizeNormalCast(Origin, Direction, result) end
+		return result
+	end,
+
+	SphereCast = function(Origin: Vector3, Direction: Vector3, Radius: number, List: CastFilter?, Type: FilterType?, Debug: boolean?): RaycastResult?
+		if typeof(Origin) ~= "Vector3" or typeof(Direction) ~= "Vector3" or typeof(Radius) ~= "number" then return nil end
+		local result = WorkspaceService:Spherecast(Origin, Radius, Direction, GetSafeParams(List, Type))
+		if Debug then Visualize.VisualizeSphereCast(Origin, Direction, Radius, result) end
+		return result
+	end,
+
+	ShapeCast = function(CF: CFrame, Size: Vector3, Direction: Vector3, List: CastFilter?, Type: FilterType?, Debug: boolean?): RaycastResult?
+		if typeof(CF) ~= "CFrame" or typeof(Size) ~= "Vector3" or typeof(Direction) ~= "Vector3" then return nil end
+		local result = WorkspaceService:Blockcast(CF, Size, Direction, GetSafeParams(List, Type))
+		if Debug then Visualize.VisualizeShapeCast(CF, Size, Direction, result) end
+		return result
+	end,
+
+	GetPartBoundsInBox = function(CF: CFrame, Size: Vector3, List: BoundsFilter?, Type: FilterType?, Debug: boolean?): { BasePart }
+		local result = WorkspaceService:GetPartBoundsInBox(CF, Size, GetOverlapParams(List, Type))
+		if Debug then Visualize.VisualizeBoundsBox(CF, Size) end
+		return result
+	end,
+
+	GetPartBoundsInRadius = function(Position: Vector3, Radius: number, List: BoundsFilter?, Type: FilterType?): { BasePart }
+		return WorkspaceService:GetPartBoundsInRadius(Position, Radius, GetOverlapParams(List, Type))
+	end,
+
+	GetPartsInPart = function(Part: BasePart, List: BoundsFilter?, Type: FilterType?): { BasePart }
+		return WorkspaceService:GetPartsInPart(Part, GetOverlapParams(List, Type))
+	end,
+}

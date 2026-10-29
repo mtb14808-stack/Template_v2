@@ -1,8 +1,0 @@
-https://leifstout.github.io/dataServiceTyped/docs/intro/
-
-
-https://leifstout.github.io/dataServiceTyped/docs/service-functions/
-
-
-
-https://leifstout.github.io/dataServiceTyped/api/DataServiceServer/
